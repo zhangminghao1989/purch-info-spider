@@ -45,7 +45,7 @@ for m in range(len(city)):
 
     n = int(start_page)
     while n <= int(stop_page):
-        #载入标题列表
+        #载入标题列表网页
         page = '%s%s' % (site, str(n))
         driver.get(page)
         
