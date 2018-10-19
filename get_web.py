@@ -21,6 +21,7 @@ chrome_options.binary_location = chrome_location
 driver = webdriver.Chrome(options=chrome_options)
 
 import csv
+import re
 
 def get(conf, m, writer_all=None):
     #读取网站配置
@@ -29,7 +30,8 @@ def get(conf, m, writer_all=None):
     start_page = conf.get(city[m], 'start_page')
     stop_page = conf.get(city[m], 'stop_page')
     suffix = conf.get(city[m], 'suffix')
-    list_class_name = conf.get(city[m], 'list_class_name')
+    data_class_name = conf.get(city[m], 'data_class_name')
+    data_tag_name = conf.get(city[m], 'data_tag_name')
     list_tag_name = conf.get(city[m], 'list_tag_name')
     time_class_name = conf.get(city[m], 'time_class_name')
     info_class_name = conf.get(city[m], 'info_class_name')
@@ -46,17 +48,21 @@ def get(conf, m, writer_all=None):
         page = '%s%s%s' % (site, str(n), suffix)
         driver.get(page)
         
-        
-        data = driver.find_element_by_class_name(list_class_name).\
-            find_elements_by_tag_name(list_tag_name)
+        if data_tag_name=='':
+            data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
+        elif data_class_name=='':
+            data = driver.find_element_by_tag_name(data_tag_name).find_elements_by_tag_name(list_tag_name)
+        else:
+            return print('Error')
+
         for i in range(len(data)):
             #标题选择器，由于列表中的标题必然包含超链接，所以此处不需要自定义元素选择器，直接读取超链接中的标题即可
             item = data[i].find_element_by_tag_name('a')
-            #title = data[i].find_element_by_class_name('wb-data-infor').text
-            title = item.get_attribute('title')
+            title = item.text
             url = item.get_attribute('href')
             #获取列表中的发布时间，提供元素选择器
-            time = data[i].find_element_by_class_name(time_class_name).text
+            time = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', data[i].text).group(0)
+            #获取正文
             info = get_info.get(url, info_class_name)
             writer.writerow([time, title, url, info])
             try:

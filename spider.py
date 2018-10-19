@@ -37,6 +37,7 @@ def main():
 
     #关闭数据汇总文件
     csv_file_all.close()
+    os.system('taskkill /IM chromedriver.exe /T /F')
     return
 
 #单独抓取配置文件中第n个网站
@@ -45,6 +46,7 @@ def main():
 def get():
     city = int(sys.argv[1])
     get_web.get(conf, city)
+    os.system('taskkill /IM chromedriver.exe /T /F')
     return
 
 
