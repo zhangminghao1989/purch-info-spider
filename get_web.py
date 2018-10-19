@@ -22,7 +22,7 @@ driver = webdriver.Chrome(options=chrome_options)
 
 import csv
 
-def get(conf, m, writer_all):
+def get(conf, m, writer_all=None):
     #读取网站配置
     city = conf.sections()
     site = conf.get(city[m], 'url')
@@ -59,7 +59,12 @@ def get(conf, m, writer_all):
             time = data[i].find_element_by_class_name(time_class_name).text
             info = get_info.get(url, info_class_name)
             writer.writerow([time, title, url, info])
-            writer_all.writerow([city[m], time, title, url, info])
+            try:
+                writer_all.writerow([city[m], time, title, url, info])
+            except TypeError:
+                pass
+            except AttributeError:
+                pass
         n = n + 1
     csv_file.close()
     return
