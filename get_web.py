@@ -28,6 +28,11 @@ def get(conf, m, writer_all):
     site = conf.get(city[m], 'url')
     start_page = conf.get(city[m], 'start_page')
     stop_page = conf.get(city[m], 'stop_page')
+    suffix = conf.get(city[m], 'suffix')
+    list_class_name = conf.get(city[m], 'list_class_name')
+    list_tag_name = conf.get(city[m], 'list_tag_name')
+    time_class_name = conf.get(city[m], 'time_class_name')
+    info_class_name = conf.get(city[m], 'info_class_name')
     
     #设置数据储存文件
     file_name = '%s%s%s' % ('./output/', city[m], '.csv')
@@ -38,18 +43,21 @@ def get(conf, m, writer_all):
     n = int(start_page)
     while n <= int(stop_page):
         #载入标题列表网页
-        page = '%s%s' % (site, str(n))
+        page = '%s%s%s' % (site, str(n), suffix)
         driver.get(page)
         
         
-        data = driver.find_element_by_class_name('wb-data-item').\
-            find_elements_by_tag_name('li')
+        data = driver.find_element_by_class_name(list_class_name).\
+            find_elements_by_tag_name(list_tag_name)
         for i in range(len(data)):
+            #标题选择器，由于列表中的标题必然包含超链接，所以此处不需要自定义元素选择器，直接读取超链接中的标题即可
             item = data[i].find_element_by_tag_name('a')
-            title = data[i].find_element_by_class_name('wb-data-infor').text
-            time = data[i].find_element_by_class_name('wb-data-date').text
+            #title = data[i].find_element_by_class_name('wb-data-infor').text
+            title = item.get_attribute('title')
             url = item.get_attribute('href')
-            info = get_info.get(url)
+            #获取列表中的发布时间，提供元素选择器
+            time = data[i].find_element_by_class_name(time_class_name).text
+            info = get_info.get(url, info_class_name)
             writer.writerow([time, title, url, info])
             writer_all.writerow([city[m], time, title, url, info])
         n = n + 1

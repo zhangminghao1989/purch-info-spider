@@ -17,7 +17,7 @@ chrome_options.add_argument('--disable-gpu')
 chrome_options.binary_location = chrome_location
 driver = webdriver.Chrome(options=chrome_options)
 
-def get(url):
+def get(url, info_class_name):
     driver.get(url)
-    info = driver.find_element_by_class_name('infodetail').text
+    info = driver.find_element_by_class_name(info_class_name).text
     return info
