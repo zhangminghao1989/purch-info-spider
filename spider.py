@@ -4,6 +4,13 @@
 '一个招投标网站信息采集工具'
 __author__ = 'Zhang Minghao'
 
+#设置获取最近n天的信息
+date_limit = input('获取最近几天的信息？（默认为2天）：')
+if date_limit == '':
+    date_limit = 2
+else:
+    date_limit = int(date_limit)
+
 #加载功能模块
 #import get_info
 import get_web
@@ -33,20 +40,24 @@ def main():
 
     #读取网站数据
     for m in range(len(conf.sections())):
-       get_web.get(conf, m, writer_all)
+       get_web.get(m, date_limit, writer_all)
 
     #关闭数据汇总文件
     csv_file_all.close()
-    os.system('taskkill /IM chromedriver.exe /T /F')
+    
+    #关闭浏览器进程
+    os.popen('taskkill /IM chromedriver.exe /T /F')
     return
 
 #单独抓取配置文件中第n个网站
 #使用方法：python spider.py n
 #n为spider.conf文件中网站的次序，从0开始
 def get():
+    #读取网站数据
     city = int(sys.argv[1])
-    get_web.get(conf, city)
-    os.system('taskkill /IM chromedriver.exe /T /F')
+    get_web.get(city, date_limit)
+    #关闭浏览器进程
+    os.popen('taskkill /IM chromedriver.exe /T /F')
     return
 
 
