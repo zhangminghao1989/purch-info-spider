@@ -45,16 +45,27 @@ def get(m, date_limit, writer_all=None):
     page = page_list.get_list(m)
 
     for n in range(len(page)):
-        #载入标题列表网页
-        driver.get(page[n])
-        
-        #读取标题列表数据
-        if data_class_name != '':
-            data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
-        elif data_tag_name != '':
-            data = driver.find_element_by_tag_name(data_tag_name).find_elements_by_tag_name(list_tag_name)
-        else:
-            return print('错误：[', city[m], ']未设置data_class_name或data_tag_name参数')
+        attempts = 0
+        success = False
+        while attempts < 3 and not success:
+            try:
+                #载入标题列表网页
+                driver.get(page[n])
+                #读取标题列表数据
+                if data_class_name != '':
+                    data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
+                    success = True
+                elif data_tag_name != '':
+                    data = driver.find_element_by_tag_name(data_tag_name).find_elements_by_tag_name(list_tag_name)
+                    success = True
+                else:
+                    print('错误：[', city[m], ']未设置data_class_name或data_tag_name参数')
+                    break
+            except:
+                attempts += 1
+                if attempts == 3:
+                    print('重试次数达到3次，标题列表抓取失败！')
+                    break
 
         #处理数据
         for i in range(len(data)):
@@ -70,6 +81,7 @@ def get(m, date_limit, writer_all=None):
             date_diff = now - info_date
             if date_diff.days > date_limit:
                 break
+
             #获取正文
             if info_class_name != '':
                 info = get_info.get_class(url, info_class_name)
