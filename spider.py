@@ -32,6 +32,11 @@ except FileExistsError:
     pass
 
 def main():
+    #删除上次的数据
+    old_files = os.listdir('./output/')
+    for i in old_files:
+        os.remove('./output/'+i)
+    
     #设置保存所有数据汇总的文件
     csv_file_all = open('./output/All.csv', 'w', newline='', encoding=encoding)
     writer_all = csv.writer(csv_file_all)

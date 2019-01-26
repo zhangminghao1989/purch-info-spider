@@ -19,31 +19,36 @@ chrome_options = Options()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--disable-gpu')
 chrome_options.binary_location = chrome_location
+prefs = {"profile.managed_default_content_settings.images": 2}
+chrome_options.add_experimental_option("prefs", prefs)
 driver = webdriver.Chrome(options=chrome_options)
 
 import csv
 import re
+import time
 from datetime import datetime, timedelta
 
 def get(m, date_limit, writer_all=None):
     #读取网站配置
+
     city = conf.sections()
     site = conf.get(city[m], 'url')
     data_class_name = conf.get(city[m], 'data_class_name')
     data_tag_name = conf.get(city[m], 'data_tag_name')
+    #data_xpath = conf.get(city[m], 'data_xpath')
     list_tag_name = conf.get(city[m], 'list_tag_name')
     info_class_name = conf.get(city[m], 'info_class_name')
     info_id_name = conf.get(city[m], 'info_id_name')
 
     #设置数据储存文件
-    file_name = '%s%s%s' % ('./output/', city[m], '.csv')
+    file_name = '%s%s.%s%s' % ('./output/', m, city[m], '.csv')
     csv_file = open(file_name, 'w', newline='', encoding=encoding)
     writer = csv.writer(csv_file)
     writer.writerow(['时间', '标题', '链接', '内容'])
 
     #获取标题列表网页
     page = page_list.get_list(m)
-
+    
     for n in range(len(page)):
         attempts = 0
         success = False
@@ -51,6 +56,7 @@ def get(m, date_limit, writer_all=None):
             try:
                 #载入标题列表网页
                 driver.get(page[n])
+                time.sleep(1)
                 #读取标题列表数据
                 if data_class_name != '':
                     data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
