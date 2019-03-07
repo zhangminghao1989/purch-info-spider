@@ -9,7 +9,7 @@ from html.parser import HTMLParser
 from urllib.request import urlopen, urlretrieve
 
 print('安装第三方库：')
-os.system('pip install configparser selenium')
+os.system('python -m pip install configparser selenium')
 
 def cbk(a,b,c):  
     '''''回调函数 

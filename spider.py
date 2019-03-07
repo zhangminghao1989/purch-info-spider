@@ -41,14 +41,19 @@ def main():
     csv_file_all = open('./output/All.csv', 'w', newline='', encoding=encoding)
     writer_all = csv.writer(csv_file_all)
     writer_all.writerow(['网站', '时间', '标题', '链接', '内容'])
-
+    
+    #设置保存关键词匹配数据的文件
+    csv_file_target = open('./output/筛选结果.csv', 'w', newline='', encoding=encoding)
+    writer_target = csv.writer(csv_file_target)
+    writer_target.writerow(['网站', '时间', '标题', '链接', '内容'])
 
     #读取网站数据
     for m in range(len(conf.sections())):
-       get_web.get(m, date_limit, writer_all)
+       get_web.get(m, date_limit, writer_all, writer_target)
 
     #关闭数据汇总文件
     csv_file_all.close()
+    csv_file_target.close()
     
     #关闭浏览器进程
     os.popen('taskkill /IM chromedriver.exe /T /F')

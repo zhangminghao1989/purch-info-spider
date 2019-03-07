@@ -12,6 +12,7 @@ import config_load
 conf = config_load.load_conf()
 chrome_location = conf.get('DEFAULT', 'chrome_location')
 encoding = conf.get('DEFAULT', 'encoding')
+pattern = conf.get('DEFAULT', 'pattern')
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -28,7 +29,7 @@ import re
 import time
 from datetime import datetime, timedelta
 
-def get(m, date_limit, writer_all=None):
+def get(m, date_limit, writer_all=None, writer_target=None):
     #读取网站配置
 
     city = conf.sections()
@@ -96,7 +97,7 @@ def get(m, date_limit, writer_all=None):
             else:
                 return print('错误：[', city[m], ']未设置info_class_name或info_id_name参数')
             
-            #写入数据
+            #输出数据
             writer.writerow([date, title, url, info])
             try:
                 writer_all.writerow([city[m], date, title, url, info])
@@ -104,5 +105,18 @@ def get(m, date_limit, writer_all=None):
                 pass
             except AttributeError:
                 pass
+            
+            #按关键词匹配数据单独输出
+            
+            if re.search(pattern, info ) != None:
+                try:
+                    writer_target.writerow([city[m], date, title, url, info])
+                except TypeError:
+                    pass
+                except AttributeError:
+                    pass
+
+            
+            
     csv_file.close()
     return
