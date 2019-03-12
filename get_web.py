@@ -14,14 +14,15 @@ chrome_location = conf.get('DEFAULT', 'chrome_location')
 encoding = conf.get('DEFAULT', 'encoding')
 pattern = conf.get('DEFAULT', 'pattern')
 
+#配置webdriver
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 chrome_options = Options()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--disable-gpu')
+chrome_options.add_argument('--log-level=3')
 chrome_options.binary_location = chrome_location
-prefs = {"profile.managed_default_content_settings.images": 2}
-chrome_options.add_experimental_option("prefs", prefs)
+chrome_options.add_argument('--blink-settings=imagesEnabled=false')
 driver = webdriver.Chrome(options=chrome_options)
 
 import csv
@@ -94,7 +95,8 @@ def get(m, date_limit, writer_all=None, writer_target=None):
             url = item.get_attribute('href')
             #获取列表中的发布时间，使用正则表达式，读取失败则说明不是标题列表
             try:
-                date = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', data[i].text).group(0)
+                
+                date = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', re.sub(re.compile(r'/|\\'), '-', data[i].text)).group(0)
             except:
                 continue
             #跳过n天前的信息
