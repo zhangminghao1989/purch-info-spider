@@ -33,6 +33,7 @@ def get_class(url, info_class_name):
             attempts += 1
             if attempts == 3:
                 print('重试次数达到3次，内容页抓取失败！')
+                info = '重试次数达到3次，内容页抓取失败！'
                 break
     return info
 

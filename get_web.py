@@ -36,8 +36,9 @@ def get(m, date_limit, writer_all=None, writer_target=None):
     site = conf.get(city[m], 'url')
     data_class_name = conf.get(city[m], 'data_class_name')
     data_tag_name = conf.get(city[m], 'data_tag_name')
-    #data_xpath = conf.get(city[m], 'data_xpath')
+    data_xpath = conf.get(city[m], 'data_xpath')
     list_tag_name = conf.get(city[m], 'list_tag_name')
+    page_link_xpath = conf.get(city[m], 'page_link_xpath')
     info_class_name = conf.get(city[m], 'info_class_name')
     info_id_name = conf.get(city[m], 'info_id_name')
 
@@ -65,23 +66,37 @@ def get(m, date_limit, writer_all=None, writer_target=None):
                 elif data_tag_name != '':
                     data = driver.find_element_by_tag_name(data_tag_name).find_elements_by_tag_name(list_tag_name)
                     success = True
+                elif data_xpath != '':
+                    data = driver.find_element_by_xpath(data_xpath).find_elements_by_tag_name(list_tag_name)
+                    success = True
                 else:
-                    print('错误：[', city[m], ']未设置data_class_name或data_tag_name参数')
-                    break
+                    print('错误：[', city[m], ']未设置data_class_name、data_tag_name或data_xpath参数')
+                    attempts = 3
+                    continue
             except:
                 attempts += 1
-                if attempts == 3:
-                    print('重试次数达到3次，标题列表抓取失败！')
-                    break
+                
+        if attempts == 3:
+            print(m, city[m], page[n], '标题列表抓取失败！')
+            continue
 
         #处理数据
         for i in range(len(data)):
-            #标题选择器，由于列表中的标题必然包含超链接，所以此处不需要自定义元素选择器，直接读取超链接中的标题即可
-            item = data[i].find_element_by_tag_name('a')
+            #标题选择器，默认直接读取<a>，也可使用xpath定位方式，读取失败则说明不是标题列表
+            try:
+                if page_link_xpath != '':
+                    item = data[i].find_element_by_xpath(page_link_xpath)
+                else:
+                    item = data[i].find_element_by_tag_name('a')
+            except:
+                continue
             title = item.text
             url = item.get_attribute('href')
-            #获取列表中的发布时间，使用正则表达式
-            date = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', data[i].text).group(0)
+            #获取列表中的发布时间，使用正则表达式，读取失败则说明不是标题列表
+            try:
+                date = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', data[i].text).group(0)
+            except:
+                continue
             #跳过n天前的信息
             now = datetime.now().date()
             info_date = datetime.strptime(date, '%Y-%m-%d').date()
