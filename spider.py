@@ -12,7 +12,6 @@ else:
     date_limit = int(date_limit)
 
 #加载功能模块
-#import get_info
 import get_web
 import config_load
 
@@ -20,16 +19,37 @@ import config_load
 import csv
 import os
 import sys
+import queue
 
 #读取配置文件
 conf = config_load.load_conf()
 encoding = conf.get('DEFAULT', 'encoding')
+chrome_location = conf.get('DEFAULT', 'chrome_location')
+thread_number = int(conf.get('DEFAULT', 'thread_number'))
+
+#配置webdriver
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+chrome_options = Options()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--disable-gpu')
+chrome_options.add_argument('--log-level=3')
+chrome_options.binary_location = chrome_location
+chrome_options.add_argument('--blink-settings=imagesEnabled=false')
 
 #建立数据存储目录
 try:
     os.mkdir('output')
 except FileExistsError:
     pass
+
+import threading
+
+def worker(city, writer_all=None, writer_target=None):
+    driver = webdriver.Chrome(options=chrome_options)
+    get_web.get(driver, city, date_limit, writer_all, writer_target)
+    #关闭浏览器进程
+    driver.quit()
 
 def main():
     #删除上次的数据
@@ -48,15 +68,24 @@ def main():
     writer_target.writerow(['网站', '时间', '标题', '链接', '内容'])
 
     #读取网站数据
-    for m in range(len(conf.sections())):
-       get_web.get(m, date_limit, writer_all, writer_target)
+
+    thread_list=[]
+    for i in range(len(conf.sections())):
+        t = threading.Thread(target=worker,args=(i, writer_all, writer_target))
+        t.setDaemon(True)
+        thread_list.append(t)
+    for t in thread_list:
+        while True:
+            if threading.activeCount() <= thread_number:
+                t.start()
+                break
+    for t in thread_list:
+        t.join()
 
     #关闭数据汇总文件
     csv_file_all.close()
     csv_file_target.close()
     
-    #关闭浏览器进程
-    os.popen('taskkill /IM chromedriver.exe /T /F')
     return
 
 #单独抓取配置文件中第n个网站
@@ -65,9 +94,7 @@ def main():
 def get():
     #读取网站数据
     city = int(sys.argv[1])
-    get_web.get(city, date_limit)
-    #关闭浏览器进程
-    os.popen('taskkill /IM chromedriver.exe /T /F')
+    worker(city)
     return
 
 

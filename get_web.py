@@ -10,29 +10,16 @@ import page_list
 #读取配置文件
 import config_load
 conf = config_load.load_conf()
-chrome_location = conf.get('DEFAULT', 'chrome_location')
 encoding = conf.get('DEFAULT', 'encoding')
 pattern = conf.get('DEFAULT', 'pattern')
-
-#配置webdriver
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-chrome_options = Options()
-chrome_options.add_argument('--headless')
-chrome_options.add_argument('--disable-gpu')
-chrome_options.add_argument('--log-level=3')
-chrome_options.binary_location = chrome_location
-chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-driver = webdriver.Chrome(options=chrome_options)
 
 import csv
 import re
 import time
 from datetime import datetime, timedelta
 
-def get(m, date_limit, writer_all=None, writer_target=None):
+def get(driver, m, date_limit, writer_all, writer_target):
     #读取网站配置
-
     city = conf.sections()
     site = conf.get(city[m], 'url')
     data_class_name = conf.get(city[m], 'data_class_name')
@@ -80,7 +67,10 @@ def get(m, date_limit, writer_all=None, writer_target=None):
         if attempts == 3:
             print(m, city[m], page[n], '标题列表抓取失败！')
             continue
-
+        
+        title_list = []
+        url_list = []
+        date_list = []
         #处理数据
         for i in range(len(data)):
             #标题选择器，默认直接读取<a>，也可使用xpath定位方式，读取失败则说明不是标题列表
@@ -91,11 +81,8 @@ def get(m, date_limit, writer_all=None, writer_target=None):
                     item = data[i].find_element_by_tag_name('a')
             except:
                 continue
-            title = item.text
-            url = item.get_attribute('href')
             #获取列表中的发布时间，使用正则表达式，读取失败则说明不是标题列表
             try:
-                
                 date = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', re.sub(re.compile(r'/|\\'), '-', data[i].text)).group(0)
             except:
                 continue
@@ -105,15 +92,23 @@ def get(m, date_limit, writer_all=None, writer_target=None):
             date_diff = now - info_date
             if date_diff.days > date_limit:
                 break
+            title_list.append(item.text)
+            url_list.append(item.get_attribute('href'))
+            date_list.append(date)
 
+
+        for i in range(len(title_list)):
+            date = date_list[i]
+            title = title_list[i]
+            url = url_list[i]
             #获取正文
             if info_class_name != '':
-                info = get_info.get_class(url, info_class_name)
+                info = get_info.get_class(driver, url, info_class_name)
             elif info_id_name != '':
-                info = get_info.get_id(url, info_id_name)
+                info = get_info.get_id(driver, url, info_id_name)
             else:
                 return print('错误：[', city[m], ']未设置info_class_name或info_id_name参数')
-            
+
             #输出数据
             writer.writerow([date, title, url, info])
             try:
@@ -133,7 +128,5 @@ def get(m, date_limit, writer_all=None, writer_target=None):
                 except AttributeError:
                     pass
 
-            
-            
     csv_file.close()
     return

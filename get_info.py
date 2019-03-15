@@ -6,21 +6,8 @@ __author__ = 'Zhang Minghao'
 
 #读取配置文件
 import time
-import config_load
-conf = config_load.load_conf()
-chrome_location = conf.get('DEFAULT', 'chrome_location')
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-chrome_options = Options()
-chrome_options.add_argument('--headless')
-chrome_options.add_argument('--disable-gpu')
-chrome_options.add_argument('--log-level=3')
-chrome_options.binary_location = chrome_location
-chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-driver = webdriver.Chrome(options=chrome_options)
-
-def get_class(url, info_class_name):
+def get_class(driver, url, info_class_name):
     attempts = 0
     success = False
     while attempts < 3 and not success:
@@ -38,7 +25,7 @@ def get_class(url, info_class_name):
                 break
     return info
 
-def get_id(url, info_id_name):
+def get_id(driver, url, info_id_name):
     attempts = 0
     success = False
     while attempts < 3 and not success:
@@ -54,4 +41,4 @@ def get_id(url, info_id_name):
                 print('抓取重试次数达到3次，内容页抓取失败！')
                 info = '抓取重试次数达到3次，内容页抓取失败！'
                 break
-        return info
+    return info
