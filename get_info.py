@@ -15,7 +15,7 @@ def get_class(driver, url, info_class_name):
             driver.get(url)
             time.sleep(1)
             info = driver.find_element_by_class_name(info_class_name).text
-            print(url, '抓取成功')
+            #print(url, '抓取成功')
             success = True
         except:
             attempts += 1
@@ -33,7 +33,7 @@ def get_id(driver, url, info_id_name):
             driver.get(url)
             time.sleep(1)
             info = driver.find_element_by_id(info_id_name).text
-            print(url, '抓取成功')
+            #print(url, '抓取成功')
             success = True
         except:
             attempts += 1
