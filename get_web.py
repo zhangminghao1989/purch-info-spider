@@ -18,7 +18,7 @@ import re
 import time
 from datetime import datetime, timedelta
 
-def get(driver, m, date_limit, writer_all, writer_target):
+def get(driver, m, date_limit, writer_all, writer_target, info_list):
     #读取网站配置
     city = conf.sections()
     site = conf.get(city[m], 'url')

@@ -13,6 +13,7 @@ else:
 
 #加载功能模块
 import get_web
+import get_info
 import config_load
 
 #import sqlite3
@@ -44,12 +45,17 @@ except FileExistsError:
     pass
 
 import threading
+info_list = [] #定义内容页列表
 
-def worker(city, writer_all=None, writer_target=None):
-    driver = webdriver.Chrome(options=chrome_options)
-    get_web.get(driver, city, date_limit, writer_all, writer_target)
+driver_queue = queue.Queue(thread_number)
+for i in range(thread_number):
+    driver_queue.put(webdriver.Chrome(options=chrome_options))
+
+def worker(city, info_list, writer_all=None, writer_target=None):
+    driver = driver_queue.get(block=True, timeout=None)
+    get_web.get(driver, city, date_limit, writer_all, writer_target, info_list)
     #关闭浏览器进程
-    driver.quit()
+    driver_queue.put(driver)
 
 def main():
     #删除上次的数据
@@ -68,10 +74,9 @@ def main():
     writer_target.writerow(['网站', '时间', '标题', '链接', '内容'])
 
     #读取网站数据
-
     thread_list=[]
     for i in range(len(conf.sections())):
-        t = threading.Thread(target=worker,args=(i, writer_all, writer_target))
+        t = threading.Thread(target=worker,args=(i, info_list, writer_all, writer_target))
         t.setDaemon(True)
         thread_list.append(t)
     for t in thread_list:
@@ -81,6 +86,14 @@ def main():
                 break
     for t in thread_list:
         t.join()
+
+    #抓取正文
+    #info_driver = []
+
+    
+    #while True:
+        
+    
 
     #关闭数据汇总文件
     csv_file_all.close()
