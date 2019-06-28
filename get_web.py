@@ -4,37 +4,28 @@
 '一个招投标网站信息采集工具'
 __author__ = 'Zhang Minghao'
 
-import get_info
+
 import page_list
 
 #读取配置文件
 import config_load
 conf = config_load.load_conf()
-encoding = conf.get('DEFAULT', 'encoding')
 pattern = conf.get('DEFAULT', 'pattern')
+city = conf.sections()
 
 import csv
 import re
 import time
 from datetime import datetime, timedelta
-
-def get(driver, m, date_limit, writer_all, writer_target, info_list):
+#driver.find_element_by_partial_link_text('下页').click()
+def get_info_list(driver, m, info_list, date_limit):
     #读取网站配置
-    city = conf.sections()
     site = conf.get(city[m], 'url')
     data_class_name = conf.get(city[m], 'data_class_name')
     data_tag_name = conf.get(city[m], 'data_tag_name')
     data_xpath = conf.get(city[m], 'data_xpath')
     list_tag_name = conf.get(city[m], 'list_tag_name')
     page_link_xpath = conf.get(city[m], 'page_link_xpath')
-    info_class_name = conf.get(city[m], 'info_class_name')
-    info_id_name = conf.get(city[m], 'info_id_name')
-
-    #设置数据储存文件
-    file_name = '%s%s.%s%s' % ('./output/', m, city[m], '.csv')
-    csv_file = open(file_name, 'w', newline='', encoding=encoding)
-    writer = csv.writer(csv_file)
-    writer.writerow(['时间', '标题', '链接', '内容'])
 
     #获取标题列表网页
     page = page_list.get_list(m)
@@ -67,10 +58,8 @@ def get(driver, m, date_limit, writer_all, writer_target, info_list):
         if attempts == 3:
             print(m, city[m], page[n], '标题列表抓取失败！')
             continue
-        
-        title_list = []
-        url_list = []
-        date_list = []
+
+
         #处理数据
         for i in range(len(data)):
             #标题选择器，默认直接读取<a>，也可使用xpath定位方式，读取失败则说明不是标题列表
@@ -92,41 +81,50 @@ def get(driver, m, date_limit, writer_all, writer_target, info_list):
             date_diff = now - info_date
             if date_diff.days > date_limit:
                 break
-            title_list.append(item.text)
-            url_list.append(item.get_attribute('href'))
-            date_list.append(date)
-
-
-        for i in range(len(title_list)):
-            date = date_list[i]
-            title = title_list[i]
-            url = url_list[i]
-            #获取正文
-            if info_class_name != '':
-                info = get_info.get_class(driver, url, info_class_name)
-            elif info_id_name != '':
-                info = get_info.get_id(driver, url, info_id_name)
-            else:
-                return print('错误：[', city[m], ']未设置info_class_name或info_id_name参数')
-
-            #输出数据
-            writer.writerow([date, title, url, info])
-            try:
-                writer_all.writerow([city[m], date, title, url, info])
-            except TypeError:
-                pass
-            except AttributeError:
-                pass
+            #储存数据
+            info = []
+            info.append(m) #city_num
+            info.append(item.get_attribute('href')) #url
+            info.append(item.text) #title
+            info.append(date) #date
+            info_list.append(info)
             
-            #按关键词匹配数据单独输出
-            
-            if re.search(pattern, info ) != None:
-                try:
-                    writer_target.writerow([city[m], date, title, url, info])
-                except TypeError:
-                    pass
-                except AttributeError:
-                    pass
+    return
 
-    csv_file.close()
+
+def get_info(driver, info_data, writer, writer_all, writer_target):
+    import get_info
+    city_num = info_data[0]
+    url = info_data[1]
+    title = info_data[2]
+    date = info_data[3]
+    info_class_name = conf.get(city[city_num], 'info_class_name')
+    info_id_name = conf.get(city[city_num], 'info_id_name')
+    #获取正文
+    if info_class_name != '':
+        info = get_info.get_class(driver, url, info_class_name)
+    elif info_id_name != '':
+        info = get_info.get_id(driver, url, info_id_name)
+    else:
+        return print('错误：[', city[city_num], ']未设置info_class_name或info_id_name参数')
+
+    #输出数据
+    writer.writerow([date, title, url, info])
+    try:
+        writer_all.writerow([city[city_num], date, title, url, info])
+    except TypeError:
+        pass
+    except AttributeError:
+        pass
+    
+    #按关键词匹配数据单独输出
+    
+    if re.search(pattern, info ) != None:
+        try:
+            writer_target.writerow([city[city_num], date, title, url, info])
+        except TypeError:
+            pass
+        except AttributeError:
+            pass
+
     return
