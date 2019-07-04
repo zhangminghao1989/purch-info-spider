@@ -5,7 +5,7 @@
 __author__ = 'Zhang Minghao'
 
 
-import page_list
+
 
 #读取配置文件
 import config_load
@@ -17,8 +17,9 @@ import csv
 import re
 import time
 from datetime import datetime, timedelta
-#driver.find_element_by_partial_link_text('下页').click()
+
 def get_info_list(driver, m, info_list, date_limit):
+    import page_list
     #读取网站配置
     site = conf.get(city[m], 'url')
     data_class_name = conf.get(city[m], 'data_class_name')
@@ -26,69 +27,84 @@ def get_info_list(driver, m, info_list, date_limit):
     data_xpath = conf.get(city[m], 'data_xpath')
     list_tag_name = conf.get(city[m], 'list_tag_name')
     page_link_xpath = conf.get(city[m], 'page_link_xpath')
+    next_page_text = conf.get(city[m], 'next_page_text')
+    next_page_xpath = conf.get(city[m], 'next_page_xpath')
+    next_page = r'//' + next_page_xpath + '[contains(text(),"' + next_page_text + '")]'
 
     #获取标题列表网页
     page = page_list.get_list(m)
     
-    for n in range(len(page)):
-        attempts = 0
-        success = False
-        while attempts < 3 and not success:
-            try:
-                #载入标题列表网页
-                driver.get(page[n])
-                time.sleep(1)
-                #读取标题列表数据
-                if data_class_name != '':
-                    data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
-                    success = True
-                elif data_tag_name != '':
-                    data = driver.find_element_by_tag_name(data_tag_name).find_elements_by_tag_name(list_tag_name)
-                    success = True
-                elif data_xpath != '':
-                    data = driver.find_element_by_xpath(data_xpath).find_elements_by_tag_name(list_tag_name)
-                    success = True
-                else:
-                    print('错误：[', city[m], ']未设置data_class_name、data_tag_name或data_xpath参数')
-                    attempts = 3
-                    continue
-            except:
-                attempts += 1
-                
-        if attempts == 3:
-            print(m, city[m], page[n], '标题列表抓取失败！')
-            continue
+    for n in page:
+        #载入标题列表网页
+        driver.get(n)
+        date_status = 0
+        while date_status == 0:
+            attempts = 0
+            success = False
+            while attempts < 3 and not success:
+                try:
 
-
-        #处理数据
-        for i in range(len(data)):
-            #标题选择器，默认直接读取<a>，也可使用xpath定位方式，读取失败则说明不是标题列表
-            try:
-                if page_link_xpath != '':
-                    item = data[i].find_element_by_xpath(page_link_xpath)
-                else:
-                    item = data[i].find_element_by_tag_name('a')
-            except:
-                continue
-            #获取列表中的发布时间，使用正则表达式，读取失败则说明不是标题列表
-            try:
-                date = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', re.sub(re.compile(r'/|\\'), '-', data[i].text)).group(0)
-            except:
-                continue
-            #跳过n天前的信息
-            now = datetime.now().date()
-            info_date = datetime.strptime(date, '%Y-%m-%d').date()
-            date_diff = now - info_date
-            if date_diff.days > date_limit:
+                    time.sleep(1)
+                    #读取标题列表数据
+                    if data_class_name != '':
+                        data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
+                        success = True
+                    elif data_tag_name != '':
+                        data = driver.find_element_by_tag_name(data_tag_name).find_elements_by_tag_name(list_tag_name)
+                        success = True
+                    elif data_xpath != '':
+                        data = driver.find_element_by_xpath(data_xpath).find_elements_by_tag_name(list_tag_name)
+                        success = True
+                    else:
+                        print('错误：[', city[m], ']未设置data_class_name、data_tag_name或data_xpath参数')
+                        attempts = 3
+                        continue
+                except:
+                    attempts += 1
+                    driver.refresh()
+                    
+            if attempts == 3:
+                print(m, city[m], n, '标题列表抓取失败！')
                 break
-            #储存数据
-            info = []
-            info.append(m) #city_num
-            info.append(item.get_attribute('href')) #url
-            info.append(item.text) #title
-            info.append(date) #date
-            info_list.append(info)
-            
+
+
+            #处理数据
+            for i in range(len(data)):
+                #标题选择器，默认直接读取<a>，也可使用xpath定位方式，读取失败则说明不是标题列表
+                try:
+                    if page_link_xpath != '':
+                        item = data[i].find_element_by_xpath(page_link_xpath)
+                    else:
+                        item = data[i].find_element_by_tag_name('a')
+                except:
+                    continue
+                #获取列表中的发布时间，使用正则表达式，读取失败则说明不是标题列表
+                try:
+                    date = re.search(r'(20\d{2}-\d{1,2}-\d{1,2})', re.sub(re.compile(r'/|\\'), '-', data[i].text)).group(0)
+                except:
+                    continue
+                #跳过n天前的信息
+                now = datetime.now().date()
+                info_date = datetime.strptime(date, '%Y-%m-%d').date()
+                date_diff = now - info_date
+                if date_diff.days > date_limit:
+                    date_status = 1
+                    break
+                #储存数据
+                info = []
+                info.append(m) #city_num
+                info.append(item.get_attribute('href')) #url
+                info.append(item.text) #title
+                info.append(date) #date
+                info_list.append(info)
+            if date_status == 1:
+                break
+            #点击下一页
+            try:
+                driver.find_element_by_xpath(next_page).click()
+            except :
+                break
+
     return
 
 

@@ -4,16 +4,8 @@
 '一个招投标网站信息采集工具'
 __author__ = 'Zhang Minghao'
 
-#设置获取最近n天的信息
-date_limit = input('获取最近几天的信息？（默认为2天）：')
-if date_limit == '':
-    date_limit = 2
-else:
-    date_limit = int(date_limit)
-
 #加载功能模块
 import get_web
-import get_info
 import config_load
 
 #import sqlite3
@@ -22,6 +14,12 @@ import os
 import sys
 import queue
 
+#设置获取最近n天的信息
+date_limit = input('获取最近几天的信息？（默认为2天）：')
+if date_limit == '':
+    date_limit = 2
+else:
+    date_limit = int(date_limit)
 #读取配置文件
 conf = config_load.load_conf()
 encoding = conf.get('DEFAULT', 'encoding')
@@ -30,15 +28,28 @@ thread_number = int(conf.get('DEFAULT', 'thread_number'))
 pattern = conf.get('DEFAULT', 'pattern')
 city = conf.sections()
 
-#配置webdriver
+#配置webdriver，可在配置文件设置使用的webdriver
+chosen_webdriver = conf.get('DEFAULT', 'webdriver')
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-chrome_options = Options()
-#chrome_options.add_argument('--headless')
-#chrome_options.add_argument('--disable-gpu')
-chrome_options.add_argument('--log-level=3')
-chrome_options.binary_location = chrome_location
-chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+if chosen_webdriver == 'Chrome':
+    from selenium.webdriver.chrome.options import Options
+    chrome_options = Options()
+    #chrome_options.add_argument('--headless')
+    #chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--log-level=3')
+    chrome_options.binary_location = chrome_location
+    chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+
+if chosen_webdriver == 'Firefox':
+    location = r'D:\Program Files\Firefox\firefox.exe'
+    options = webdriver.FirefoxOptions()
+    options.add_argument('-headless')
+    profile = webdriver.FirefoxProfile()
+    profile.set_preference('permissions.default.image', 2)
+    #禁用Flash
+    profile.set_preference('dom.ipc.plugins.enabled.npswf32.dll', 'false')
+    #禁用Js
+    profile.set_preference('javascript.enabled', 'false')
 
 #建立数据存储目录
 try:
@@ -54,7 +65,10 @@ info_list = []
 #定义Driver队列
 driver_queue = queue.Queue(thread_number)
 for i in range(thread_number):
-    driver_queue.put(webdriver.Chrome(options=chrome_options))
+    if chosen_webdriver == 'Chrome':
+        driver_queue.put(webdriver.Chrome(options=chrome_options))
+    if chosen_webdriver == 'Firefox':
+        driver_queue.put(webdriver.Firefox(firefox_binary=location, options=options, firefox_profile = profile))
 
 def worker_list(city_num, info_list):
     #从Driver队列获取一个Driver
@@ -110,6 +124,8 @@ def main():
     for t in thread_list:
         t.join()
 
+    print('抓取公告列表完成，开始抓取正文。')
+        
     #抓取正文
     info_thread_list = []
     for i in info_list:
@@ -121,6 +137,7 @@ def main():
         while True:
             if threading.activeCount() <= thread_number:
                 t.start()
+                #print(len(info_thread_list), r'/', len(info_list))
                 break
     for t in info_thread_list:
         t.join()
@@ -155,6 +172,7 @@ def get():
     
     #获取正文列表
     worker_list(city_num, info_list)
+    print('抓取公告列表完成，开始抓取正文。')
     
     #抓取正文
     info_thread_list = []
@@ -166,6 +184,7 @@ def get():
         while True:
             if threading.activeCount() <= thread_number:
                 t.start()
+                #print(len(info_thread_list), r'/', len(info_list))
                 break
     for t in info_thread_list:
         t.join()
