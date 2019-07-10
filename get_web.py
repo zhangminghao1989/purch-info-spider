@@ -17,11 +17,14 @@ import csv
 import re
 import time
 from datetime import datetime, timedelta
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 def get_info_list(driver, m, info_list, date_limit):
     import page_list
     #读取网站配置
-    site = conf.get(city[m], 'url')
     data_class_name = conf.get(city[m], 'data_class_name')
     data_tag_name = conf.get(city[m], 'data_tag_name')
     data_xpath = conf.get(city[m], 'data_xpath')
@@ -30,21 +33,36 @@ def get_info_list(driver, m, info_list, date_limit):
     next_page_text = conf.get(city[m], 'next_page_text')
     next_page_xpath = conf.get(city[m], 'next_page_xpath')
     next_page = r'//' + next_page_xpath + '[contains(text(),"' + next_page_text + '")]'
+    wait_for_load = conf.get(city[m], 'wait_for_load')
 
     #获取标题列表网页
     page = page_list.get_list(m)
     
     for n in page:
-        #载入标题列表网页
-        driver.get(n)
+        wait_for_load_count = 0
+        while wait_for_load_count < 3:
+            #载入标题列表网页
+            driver.get(n)
+            #等待页面载入完成
+            if wait_for_load != '':
+                try:
+                    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, wait_for_load)))
+                    print('页面载入完成！')
+                except:
+                    wait_for_load_count += 1
+                    print('页面载入失败', wait_for_load_count)
+                    continue
+                break
+            else:
+                break
+
         date_status = 0
         while date_status == 0:
             attempts = 0
             success = False
             while attempts < 3 and not success:
                 try:
-
-                    time.sleep(1)
+                    #time.sleep(2)
                     #读取标题列表数据
                     if data_class_name != '':
                         data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
@@ -61,10 +79,13 @@ def get_info_list(driver, m, info_list, date_limit):
                         continue
                 except:
                     attempts += 1
+                    time.sleep(5)
                     driver.refresh()
-                    
-            if attempts == 3:
-                print(m, city[m], n, '标题列表抓取失败！')
+                if attempts == 3:
+                    print(m, city[m], n, '标题列表抓取失败！')
+                    data = 0
+                    break
+            if data == 0:
                 break
 
 
@@ -102,9 +123,14 @@ def get_info_list(driver, m, info_list, date_limit):
             #点击下一页
             try:
                 driver.find_element_by_xpath(next_page).click()
-            except :
+            except:
                 break
-
+            try:
+                WebDriverWait(driver, 10).until(EC.staleness_of(data[1]))
+            except:
+                print(city[m], '翻页失败！')
+                continue
+    print('抓取', city[m], '列表完成。')
     return
 
 

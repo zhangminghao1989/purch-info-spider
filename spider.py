@@ -35,7 +35,7 @@ if chosen_webdriver == 'Chrome':
     from selenium.webdriver.chrome.options import Options
     chrome_options = Options()
     #chrome_options.add_argument('--headless')
-    #chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--log-level=3')
     chrome_options.binary_location = chrome_location
     chrome_options.add_argument('--blink-settings=imagesEnabled=false')
@@ -109,8 +109,9 @@ def main():
     csv_file_target = open('./output/筛选结果.csv', 'w', newline='', encoding=encoding)
     writer_target = csv.writer(csv_file_target)
     writer_target.writerow(['网站', '时间', '标题', '链接', '内容'])
-
+    
     #获取正文列表
+    global info_list
     thread_list=[]
     for i in range(len(conf.sections())):
         t = threading.Thread(target=worker_list,args=(i, info_list))
@@ -125,7 +126,14 @@ def main():
         t.join()
 
     print('抓取公告列表完成，开始抓取正文。')
-        
+    
+    #info_list去重
+    tmp_list = []
+    for  i in info_list:
+        if i not in tmp_list:
+            tmp_list.append(i)
+    info_list = tmp_list
+    
     #抓取正文
     info_thread_list = []
     for i in info_list:
@@ -171,9 +179,16 @@ def get():
     writer.writerow(['时间', '标题', '链接', '内容'])
     
     #获取正文列表
+    global info_list
     worker_list(city_num, info_list)
     print('抓取公告列表完成，开始抓取正文。')
     
+    #info_list去重
+    tmp_list = []
+    for  i in info_list:
+        if i not in tmp_list:
+            tmp_list.append(i)
+    info_list = tmp_list    
     #抓取正文
     info_thread_list = []
     for i in range(len(info_list)):
