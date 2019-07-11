@@ -15,13 +15,12 @@ def get_class(driver, url, info_class_name):
             driver.get(url)
             time.sleep(1)
             info = driver.find_element_by_class_name(info_class_name).text
-            #print(url, '抓取成功')
             success = True
         except:
             attempts += 1
             if attempts == 3:
-                print('抓取重试次数达到3次，内容页抓取失败！')
                 info = '抓取重试次数达到3次，内容页抓取失败！'
+                print(url, '抓取重试次数达到3次，内容页抓取失败！')
                 break
     return info
 
@@ -33,12 +32,11 @@ def get_id(driver, url, info_id_name):
             driver.get(url)
             time.sleep(1)
             info = driver.find_element_by_id(info_id_name).text
-            #print(url, '抓取成功')
             success = True
         except:
             attempts += 1
             if attempts == 3:
-                print('抓取重试次数达到3次，内容页抓取失败！')
                 info = '抓取重试次数达到3次，内容页抓取失败！'
+                print(url, '抓取重试次数达到3次，内容页抓取失败！')
                 break
     return info

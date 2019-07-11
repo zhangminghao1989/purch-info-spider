@@ -30,10 +30,9 @@ def get_info_list(driver, m, info_list, date_limit):
     data_xpath = conf.get(city[m], 'data_xpath')
     list_tag_name = conf.get(city[m], 'list_tag_name')
     page_link_xpath = conf.get(city[m], 'page_link_xpath')
-    next_page_text = conf.get(city[m], 'next_page_text')
     next_page_xpath = conf.get(city[m], 'next_page_xpath')
-    next_page = r'//' + next_page_xpath + '[contains(text(),"' + next_page_text + '")]'
     wait_for_load = conf.get(city[m], 'wait_for_load')
+    page_query = conf.get(city[m], 'page_query')
 
     #获取标题列表网页
     page = page_list.get_list(m)
@@ -46,7 +45,7 @@ def get_info_list(driver, m, info_list, date_limit):
             #等待页面载入完成
             if wait_for_load != '':
                 try:
-                    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, wait_for_load)))
+                    WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, wait_for_load)))
                     print('页面载入完成！')
                 except:
                     wait_for_load_count += 1
@@ -121,14 +120,20 @@ def get_info_list(driver, m, info_list, date_limit):
             if date_status == 1:
                 break
             #点击下一页
+            url = driver.current_url
             try:
-                driver.find_element_by_xpath(next_page).click()
+                driver.find_element_by_xpath(next_page_xpath).click()
             except:
-                break
+                if page_query != '':
+                    url_next = page_next(url, page_query)
+                    driver.get(url_next)
+                    print(url, '使用备用翻页方式。')
+                else:
+                    break
             try:
                 WebDriverWait(driver, 10).until(EC.staleness_of(data[1]))
             except:
-                print(city[m], '翻页失败！')
+                print(city[m], driver.current_url, '翻页失败！')
                 continue
     print('抓取', city[m], '列表完成。')
     return
@@ -160,7 +165,6 @@ def get_info(driver, info_data, writer, writer_all, writer_target):
         pass
     
     #按关键词匹配数据单独输出
-    
     if re.search(pattern, info ) != None:
         try:
             writer_target.writerow([city[city_num], date, title, url, info])
@@ -168,5 +172,19 @@ def get_info(driver, info_data, writer, writer_all, writer_target):
             pass
         except AttributeError:
             pass
-
     return
+
+#备用翻页方式
+def page_next(url, page_query):
+    from urllib import parse
+    #解析URL
+    url_obj = parse.urlparse(url)
+    #读取页码
+    query = dict(parse.parse_qsl(url_obj.query))
+    page_num = query[page_query]
+    #页码+1
+    page_num = str(int(page_num) + 1).zfill(len(page_num))
+    query[page_query] = page_num
+    parse.urlencode(query)
+    #输出下一页url
+    return parse.urlunparse(url_obj._replace(query=parse.urlencode(query)))
