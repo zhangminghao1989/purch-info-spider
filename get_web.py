@@ -42,6 +42,7 @@ def get_info_list(driver, m, info_list, date_limit):
         while wait_for_load_count < 3:
             #载入标题列表网页
             driver.get(n)
+            time.sleep(1)
             #等待页面载入完成
             if wait_for_load != '':
                 try:
@@ -61,7 +62,6 @@ def get_info_list(driver, m, info_list, date_limit):
             success = False
             while attempts < 3 and not success:
                 try:
-                    #time.sleep(2)
                     #读取标题列表数据
                     if data_class_name != '':
                         data = driver.find_element_by_class_name(data_class_name).find_elements_by_tag_name(list_tag_name)
