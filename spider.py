@@ -24,6 +24,7 @@ else:
 conf = config_load.load_conf()
 encoding = conf.get('DEFAULT', 'encoding')
 chrome_location = conf.get('DEFAULT', 'chrome_location')
+firefox_location = conf.get('DEFAULT', 'firefox_location')
 thread_number = int(conf.get('DEFAULT', 'thread_number'))
 pattern = conf.get('DEFAULT', 'pattern')
 city = conf.sections()
@@ -41,15 +42,14 @@ if chosen_webdriver == 'Chrome':
     chrome_options.add_argument('--blink-settings=imagesEnabled=false')
 
 if chosen_webdriver == 'Firefox':
-    location = r'D:\Program Files\Firefox\firefox.exe'
-    options = webdriver.FirefoxOptions()
-    options.add_argument('-headless')
-    profile = webdriver.FirefoxProfile()
-    profile.set_preference('permissions.default.image', 2)
+    firefox_options = webdriver.FirefoxOptions()
+    firefox_options.add_argument('-headless')
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.set_preference('permissions.default.image', 2)
     #禁用Flash
-    profile.set_preference('dom.ipc.plugins.enabled.npswf32.dll', 'false')
+    firefox_profile.set_preference('dom.ipc.plugins.enabled.npswf32.dll', 'false')
     #禁用Js
-    profile.set_preference('javascript.enabled', 'false')
+    firefox_profile.set_preference('javascript.enabled', 'false')
 
 #建立数据存储目录
 try:
@@ -68,7 +68,7 @@ for i in range(thread_number):
     if chosen_webdriver == 'Chrome':
         driver_queue.put(webdriver.Chrome(options=chrome_options))
     if chosen_webdriver == 'Firefox':
-        driver_queue.put(webdriver.Firefox(firefox_binary=location, options=options, firefox_profile = profile))
+        driver_queue.put(webdriver.Firefox(firefox_binary=firefox_location, options=firefox_options, firefox_profile = firefox_profile))
 
 def worker_list(city_num, info_list):
     #从Driver队列获取一个Driver
@@ -151,11 +151,10 @@ def main():
         t.join()
     
     #关闭浏览器进程
-    i = 0
-    while i < thread_number:
+    for i in range(thread_number):
         driver = driver_queue.get(block=True, timeout=None)
         driver.quit()
-        i = i + 1
+
 
     #关闭数据文件
     csv_file_all.close()
@@ -207,11 +206,9 @@ def get():
     #关闭数据文件
     csv_file.close()
     #关闭浏览器进程
-    i = 0
-    while i < thread_number:
+    for i in range(thread_number):
         driver = driver_queue.get(block=True, timeout=None)
         driver.quit()
-        i = i + 1
     return
 
 
