@@ -13,6 +13,7 @@ conf = config_load.load_conf()
 pattern = conf.get('DEFAULT', 'pattern')
 city = conf.sections()
 
+import re_filter
 import csv
 import re
 import time
@@ -140,7 +141,7 @@ def get_info_list(driver, m, info_list, date_limit):
 
 
 def get_info(driver, info_data, writer, writer_all, writer_target):
-    import get_info
+    import get_info_fun
     city_num = info_data[0]
     url = info_data[1]
     title = info_data[2]
@@ -149,9 +150,9 @@ def get_info(driver, info_data, writer, writer_all, writer_target):
     info_id_name = conf.get(city[city_num], 'info_id_name')
     #获取正文
     if info_class_name != '':
-        info = get_info.get_class(driver, url, info_class_name)
+        info = get_info_fun.get_class(driver, url, info_class_name)
     elif info_id_name != '':
-        info = get_info.get_id(driver, url, info_id_name)
+        info = get_info_fun.get_id(driver, url, info_id_name)
     else:
         return print('错误：[', city[city_num], ']未设置info_class_name或info_id_name参数')
 
@@ -165,7 +166,7 @@ def get_info(driver, info_data, writer, writer_all, writer_target):
         pass
     
     #按关键词匹配数据单独输出
-    if re.search(pattern, info ) != None:
+    if re_filter.main(info) == 1:
         try:
             writer_target.writerow([city[city_num], date, title, url, info])
         except TypeError:
