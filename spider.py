@@ -66,9 +66,15 @@ info_list = []
 driver_queue = queue.Queue(thread_number)
 for i in range(thread_number):
     if chosen_webdriver == 'Chrome':
-        driver_queue.put(webdriver.Chrome(options=chrome_options))
+        driver_init = webdriver.Chrome(options=chrome_options)
     if chosen_webdriver == 'Firefox':
-        driver_queue.put(webdriver.Firefox(firefox_binary=firefox_location, options=firefox_options, firefox_profile = firefox_profile))
+        driver_init = webdriver.Firefox(firefox_binary=firefox_location, options=firefox_options, firefox_profile = firefox_profile)
+    #设置浏览器分辨率
+    driver_init.set_window_size(1280, 720)
+    driver_queue.put(driver_init)
+
+
+
 
 def worker_list(city_num, info_list):
     #从Driver队列获取一个Driver
