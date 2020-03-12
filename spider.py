@@ -48,8 +48,8 @@ if chosen_webdriver == 'Firefox':
     firefox_profile.set_preference('permissions.default.image', 2)
     #禁用Flash
     firefox_profile.set_preference('dom.ipc.plugins.enabled.npswf32.dll', 'false')
-    #禁用Js
-    firefox_profile.set_preference('javascript.enabled', 'false')
+    #禁用javascript，部分网站可能会不能正常使用
+    #firefox_profile.set_preference('javascript.enabled', 'false')
 
 #建立数据存储目录
 try:
@@ -70,7 +70,8 @@ for i in range(thread_number):
     if chosen_webdriver == 'Firefox':
         driver_init = webdriver.Firefox(firefox_binary=firefox_location, options=firefox_options, firefox_profile = firefox_profile)
     #设置浏览器分辨率
-    driver_init.set_window_size(1280, 720)
+    size = driver_init.get_window_size()
+    driver_init.set_window_size(1280, size['height'])
     driver_queue.put(driver_init)
 
 
