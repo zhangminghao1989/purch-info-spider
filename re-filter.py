@@ -10,10 +10,10 @@ import config_load
 conf = config_load.load_conf()
 pattern = conf.get('DEFAULT', 'pattern')
 encoding = conf.get('DEFAULT', 'encoding')
-import re_filter
+import filter
 import csv
-csv_read_file = open('./output/筛选结果.csv', 'r', newline='', encoding=encoding)
-csv_write_file = open('./output/二次筛选结果.csv', 'w', newline='', encoding=encoding)
+csv_read_file = open('./output/All.csv', 'r', newline='', encoding=encoding)
+csv_write_file = open('./output/筛选结果.csv', 'w', newline='', encoding=encoding)
 csv_junk_file = open('./output/无用信息.csv', 'w', newline='', encoding=encoding)
 reader = csv.DictReader(csv_read_file)
 writer = csv.writer(csv_write_file)
@@ -31,7 +31,7 @@ for i in list:
     title = i['标题']
     url = i['链接']
     info = i['内容']
-    if re_filter.main(info) == 1:
+    if filter.main(info) == 1:
         writer.writerow([city, date, title, url, info])
     else:
         junk.writerow([city, date, title, url, info])

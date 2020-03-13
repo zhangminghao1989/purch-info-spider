@@ -8,7 +8,8 @@ __author__ = 'Zhang Minghao'
 import get_web
 import config_load
 
-#import sqlite3
+import sqlite3
+import sqlite_db
 import csv
 import os
 import sys
@@ -20,6 +21,13 @@ if date_limit == '':
     date_limit = 2
 else:
     date_limit = int(date_limit)
+#是否跳过已抓取过的信息
+check_history = str.lower(input('是否跳过已抓取过的信息？（Y/n）：'))
+if check_history == '' or check_history == 'y':
+    check_history = 1
+else:
+    check_history = 0
+
 #读取配置文件
 conf = config_load.load_conf()
 encoding = conf.get('DEFAULT', 'encoding')
@@ -57,6 +65,14 @@ try:
 except FileExistsError:
     pass
 
+#初始化历史信息数据库
+conn = sqlite3.connect('history.db')
+cursor = conn.cursor()
+try:
+    cursor.execute('select * from history')
+except:
+    sqlite_db.main(cursor)
+
 import threading
 
 #定义内容页列表
@@ -83,13 +99,33 @@ def worker_list(city_num, info_list):
     get_web.get_info_list(driver, city_num, info_list, date_limit)
     #将Driver放回从Driver队列
     driver_queue.put(driver)
-
+url_info = []
 def worker_info(info, writer, writer_all=None, writer_target=None):
     #从Driver队列获取一个Driver
     driver = driver_queue.get(block=True, timeout=None)
-    get_web.get_info(driver, info, writer, writer_all, writer_target)
+    url_info.append(get_web.get_info(driver, info, writer, writer_all, writer_target))
     #将Driver放回从Driver队列
     driver_queue.put(driver)
+    return url_info
+
+#info_list去重
+def del_dup(info_list):
+    tmp_list = []
+    for  i in info_list:
+        if i not in tmp_list:
+            tmp_list.append(i)
+    info_list = []
+    for info in tmp_list:
+        #检查数据库中是否存在已抓取过的记录
+        if sqlite_db.check(cursor,info) == 1:
+            #当存在已抓取的数据并且设置为不跳过已抓取的信息时
+            if check_history == 0:
+                info_list.append(info)
+        #检查数据库中不存在已抓取过的记录
+        else:
+            info_list.append(info)
+            sqlite_db.add(cursor,info)
+    return info_list
 
 def main():
     #删除上次的数据
@@ -135,11 +171,8 @@ def main():
     print('抓取公告列表完成，开始抓取正文。')
     
     #info_list去重
-    tmp_list = []
-    for  i in info_list:
-        if i not in tmp_list:
-            tmp_list.append(i)
-    info_list = tmp_list
+    info_list = del_dup(info_list)
+    
     
     #抓取正文
     info_thread_list = []
@@ -168,7 +201,11 @@ def main():
     csv_file_target.close()
     for i in csv_file_list:
         i.close()
-    
+    for i in url_info:
+        sqlite_db.add_info(cursor, i)
+    cursor.close()
+    conn.commit()
+    conn.close()
     return
 
 #单独抓取配置文件中第n个网站
@@ -190,11 +227,8 @@ def get():
     print('抓取公告列表完成，开始抓取正文。')
     
     #info_list去重
-    tmp_list = []
-    for  i in info_list:
-        if i not in tmp_list:
-            tmp_list.append(i)
-    info_list = tmp_list    
+    info_list = del_dup(info_list)
+    
     #抓取正文
     info_thread_list = []
     for i in range(len(info_list)):
@@ -205,13 +239,17 @@ def get():
         while True:
             if threading.activeCount() <= thread_number:
                 t.start()
-                #print(len(info_thread_list), r'/', len(info_list))
                 break
     for t in info_thread_list:
         t.join()
 
     #关闭数据文件
     csv_file.close()
+    for i in url_info:
+        sqlite_db.add_info(cursor, i)
+    cursor.close()
+    conn.commit()
+    conn.close()
     #关闭浏览器进程
     for i in range(thread_number):
         driver = driver_queue.get(block=True, timeout=None)

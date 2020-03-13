@@ -13,7 +13,7 @@ conf = config_load.load_conf()
 pattern = conf.get('DEFAULT', 'pattern')
 city = conf.sections()
 
-import re_filter
+import filter
 import csv
 import re
 import time
@@ -164,16 +164,17 @@ def get_info(driver, info_data, writer, writer_all, writer_target):
         pass
     except AttributeError:
         pass
+
     
     #按关键词匹配数据单独输出
-    if re_filter.main(info) == 1:
+    if filter.main(info) == 1:
         try:
             writer_target.writerow([city[city_num], date, title, url, info])
         except TypeError:
             pass
         except AttributeError:
             pass
-    return
+    return [url, info]
 
 #备用翻页方式
 def page_next(url, page_query):
