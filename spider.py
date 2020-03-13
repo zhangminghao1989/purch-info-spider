@@ -7,13 +7,15 @@ __author__ = 'Zhang Minghao'
 #加载功能模块
 import get_web
 import config_load
-
+import page_list_fun
 import sqlite3
 import sqlite_db
 import csv
 import os
 import sys
 import queue
+import random
+import re_filter
 
 #设置获取最近n天的信息
 date_limit = input('获取最近几天的信息？（默认为2天）：')
@@ -23,10 +25,10 @@ else:
     date_limit = int(date_limit)
 #是否跳过已抓取过的信息
 check_history = str.lower(input('是否跳过已抓取过的信息？（Y/n）：'))
-if check_history == '' or check_history == 'y':
-    check_history = 1
-else:
+if check_history == 'n':
     check_history = 0
+else:
+    check_history = 1
 
 #读取配置文件
 conf = config_load.load_conf()
@@ -75,9 +77,10 @@ except:
 
 import threading
 
-#定义内容页列表
+#初始化全局变量
+page_list = []
 info_list = []
-
+url_info = []
 #定义Driver队列
 driver_queue = queue.Queue(thread_number)
 for i in range(thread_number):
@@ -91,22 +94,20 @@ for i in range(thread_number):
     driver_queue.put(driver_init)
 
 
-
-
-def worker_list(city_num, info_list):
+def worker_list(page, info_list):
     #从Driver队列获取一个Driver
     driver = driver_queue.get(block=True, timeout=None)
-    get_web.get_info_list(driver, city_num, info_list, date_limit)
+    get_web.get_info_list(driver, page, info_list, date_limit)
     #将Driver放回从Driver队列
     driver_queue.put(driver)
-url_info = []
-def worker_info(info, writer, writer_all=None, writer_target=None):
+
+def worker_info(info, writer, writer_all=None):
     #从Driver队列获取一个Driver
     driver = driver_queue.get(block=True, timeout=None)
-    url_info.append(get_web.get_info(driver, info, writer, writer_all, writer_target))
+    url_info.append(get_web.get_info(driver, info, writer, writer_all))
     #将Driver放回从Driver队列
     driver_queue.put(driver)
-    return url_info
+    return
 
 #info_list去重
 def del_dup(info_list):
@@ -126,6 +127,29 @@ def del_dup(info_list):
             info_list.append(info)
             sqlite_db.add(cursor,info)
     return info_list
+
+def get_page_list(m):
+    for page in page_list_fun.get_list(m):
+        page_list.append([m, page])
+    #打乱列表顺序，避免短时间大量抓取同一网站
+    random.shuffle(page_list)
+
+def mulit_thread(page_list):
+    global info_list
+    thread_list=[]
+    for i in page_list:
+        t = threading.Thread(target=worker_list,args=(i, info_list))
+        t.setDaemon(True)
+        thread_list.append(t)
+    for t in thread_list:
+        while True:
+            if threading.activeCount() <= thread_number:
+                t.start()
+                break
+    for t in thread_list:
+        t.join()
+    print('抓取公告列表完成，开始抓取正文。')
+    return
 
 def main():
     #删除上次的数据
@@ -148,27 +172,15 @@ def main():
     writer_all = csv.writer(csv_file_all)
     writer_all.writerow(['网站', '时间', '标题', '链接', '内容'])
     
-    #设置保存关键词匹配数据的文件
-    csv_file_target = open('./output/筛选结果.csv', 'w', newline='', encoding=encoding)
-    writer_target = csv.writer(csv_file_target)
-    writer_target.writerow(['网站', '时间', '标题', '链接', '内容'])
+
+    
+    #获取起始页列表
+    for i in range(len(conf.sections())):
+        get_page_list(i)
     
     #获取正文列表
     global info_list
-    thread_list=[]
-    for i in range(len(conf.sections())):
-        t = threading.Thread(target=worker_list,args=(i, info_list))
-        t.setDaemon(True)
-        thread_list.append(t)
-    for t in thread_list:
-        while True:
-            if threading.activeCount() <= thread_number:
-                t.start()
-                break
-    for t in thread_list:
-        t.join()
-
-    print('抓取公告列表完成，开始抓取正文。')
+    mulit_thread(page_list)
     
     #info_list去重
     info_list = del_dup(info_list)
@@ -178,7 +190,7 @@ def main():
     info_thread_list = []
     for i in info_list:
         writer = csv.writer(csv_file_list[i[0]])
-        t = threading.Thread(target=worker_info,args=(i, writer, writer_all, writer_target))
+        t = threading.Thread(target=worker_info,args=(i, writer, writer_all))
         t.setDaemon(True)
         info_thread_list.append(t)
     for t in info_thread_list:
@@ -196,9 +208,14 @@ def main():
         driver.quit()
 
 
-    #关闭数据文件
+    #关闭全部数据csv文件
     csv_file_all.close()
-    csv_file_target.close()
+    
+        
+    #按关键词匹配数据单独输出
+    re_filter.main()
+
+    #将全部数据写入数据库
     for i in csv_file_list:
         i.close()
     for i in url_info:
@@ -221,10 +238,11 @@ def get():
     writer = csv.writer(csv_file)
     writer.writerow(['时间', '标题', '链接', '内容'])
     
+    #获取起始页列表
+    get_page_list(city_num)
     #获取正文列表
     global info_list
-    worker_list(city_num, info_list)
-    print('抓取公告列表完成，开始抓取正文。')
+    mulit_thread(page_list)
     
     #info_list去重
     info_list = del_dup(info_list)
@@ -243,17 +261,23 @@ def get():
     for t in info_thread_list:
         t.join()
 
-    #关闭数据文件
-    csv_file.close()
-    for i in url_info:
-        sqlite_db.add_info(cursor, i)
-    cursor.close()
-    conn.commit()
-    conn.close()
     #关闭浏览器进程
     for i in range(thread_number):
         driver = driver_queue.get(block=True, timeout=None)
         driver.quit()
+        
+    #关闭数据文件
+    csv_file.close()
+    #是否跳过写入数据库
+    check_history = str.lower(input('是否跳过写入数据库？（Y/n）：'))
+    if check_history != 'n':
+        for i in url_info:
+            sqlite_db.add_info(cursor, i)
+
+    cursor.close()
+    conn.commit()
+    conn.close()
+
     return
 
 
