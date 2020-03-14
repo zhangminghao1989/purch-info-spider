@@ -8,7 +8,6 @@ def main():
     #读取配置文件
     import config_load
     conf = config_load.load_conf()
-    pattern = conf.get('DEFAULT', 'pattern')
     encoding = conf.get('DEFAULT', 'encoding')
     import filter
     import csv

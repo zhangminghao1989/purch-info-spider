@@ -14,5 +14,13 @@ def load_conf(conf_name='spider.conf'):
     config.read(conf_name, encoding='utf-8')
     return config
     
+def load_website_data(conf_name='website_data.conf'):
+    """
+    读取配置文件
+    """
+    config = configparser.ConfigParser()
+    config.read(conf_name, encoding='utf-8')
+    return config
+    
 if __name__=='__main__':
     load_conf()

@@ -11,7 +11,8 @@ __author__ = 'Zhang Minghao'
 import config_load
 conf = config_load.load_conf()
 pattern = conf.get('DEFAULT', 'pattern')
-city = conf.sections()
+website_data = config_load.load_website_data()
+city = website_data.sections()
 
 import csv
 import re
@@ -25,14 +26,14 @@ from selenium.webdriver.common.by import By
 def get_info_list(driver, page, info_list, date_limit):
     m = page[0]
     #读取网站配置
-    data_class_name = conf.get(city[m], 'data_class_name')
-    data_tag_name = conf.get(city[m], 'data_tag_name')
-    data_xpath = conf.get(city[m], 'data_xpath')
-    list_tag_name = conf.get(city[m], 'list_tag_name')
-    page_link_xpath = conf.get(city[m], 'page_link_xpath')
-    next_page_xpath = conf.get(city[m], 'next_page_xpath')
-    wait_for_load = conf.get(city[m], 'wait_for_load')
-    page_query = conf.get(city[m], 'page_query')
+    data_class_name = website_data.get(city[m], 'data_class_name')
+    data_tag_name = website_data.get(city[m], 'data_tag_name')
+    data_xpath = website_data.get(city[m], 'data_xpath')
+    list_tag_name = website_data.get(city[m], 'list_tag_name')
+    page_link_xpath = website_data.get(city[m], 'page_link_xpath')
+    next_page_xpath = website_data.get(city[m], 'next_page_xpath')
+    wait_for_load = website_data.get(city[m], 'wait_for_load')
+    page_query = website_data.get(city[m], 'page_query')
 
     #获取标题列表网页
     wait_for_load_count = 0
@@ -146,8 +147,8 @@ def get_info(driver, info_data, writer, writer_all):
     url = info_data[1]
     title = info_data[2]
     date = info_data[3]
-    info_class_name = conf.get(city[city_num], 'info_class_name')
-    info_id_name = conf.get(city[city_num], 'info_id_name')
+    info_class_name = website_data.get(city[city_num], 'info_class_name')
+    info_id_name = website_data.get(city[city_num], 'info_id_name')
     #获取正文
     if info_class_name != '':
         info = get_info_fun.get_class(driver, url, info_class_name)

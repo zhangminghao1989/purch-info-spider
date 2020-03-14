@@ -9,28 +9,28 @@ import sys
 
 #读取配置文件
 import config_load
-conf = config_load.load_conf()
+website_data = config_load.load_website_data()
 
 def get_list(m):
     #读取网站配置
-    city = conf.sections()
-    site = conf.get(city[m], 'url')
+    city = website_data.sections()
+    site = website_data.get(city[m], 'url')
     url_var_0 = ['']
     url_var_1 = ['']
     url_var_2 = ['']
     url_var_3 = ['']
     url_var_4 = ['']
     
-    if conf.get(city[m], 'url_var_0') != '':
-        url_var_0 = re.split(',', conf.get(city[m], 'url_var_0'))
-    if conf.get(city[m], 'url_var_1') != '':
-        url_var_1 = re.split(',', conf.get(city[m], 'url_var_1'))
-    if conf.get(city[m], 'url_var_2') != '':
-        url_var_2 = re.split(',', conf.get(city[m], 'url_var_2'))
-    if conf.get(city[m], 'url_var_3') != '':
-        url_var_3 = re.split(',', conf.get(city[m], 'url_var_3'))
-    if conf.get(city[m], 'url_var_4') != '':
-        url_var_4 = re.split(',', conf.get(city[m], 'url_var_4'))
+    if website_data.get(city[m], 'url_var_0') != '':
+        url_var_0 = re.split(',', website_data.get(city[m], 'url_var_0'))
+    if website_data.get(city[m], 'url_var_1') != '':
+        url_var_1 = re.split(',', website_data.get(city[m], 'url_var_1'))
+    if website_data.get(city[m], 'url_var_2') != '':
+        url_var_2 = re.split(',', website_data.get(city[m], 'url_var_2'))
+    if website_data.get(city[m], 'url_var_3') != '':
+        url_var_3 = re.split(',', website_data.get(city[m], 'url_var_3'))
+    if website_data.get(city[m], 'url_var_4') != '':
+        url_var_4 = re.split(',', website_data.get(city[m], 'url_var_4'))
     page_list = []
     for a in url_var_0:
         for b in url_var_1:

@@ -3,3 +3,4 @@ output/
 chromedriver.exe
 history.db
 history.db-journal
+spider.conf

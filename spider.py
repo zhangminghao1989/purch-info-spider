@@ -37,7 +37,8 @@ chrome_location = conf.get('DEFAULT', 'chrome_location')
 firefox_location = conf.get('DEFAULT', 'firefox_location')
 thread_number = int(conf.get('DEFAULT', 'thread_number'))
 pattern = conf.get('DEFAULT', 'pattern')
-city = conf.sections()
+website_data = config_load.load_website_data()
+city = website_data.sections()
 
 #配置webdriver，可在配置文件设置使用的webdriver
 chosen_webdriver = conf.get('DEFAULT', 'webdriver')
@@ -159,7 +160,7 @@ def main():
     
     #定义数据储存文件列表
     csv_file_list = []
-    for i in range(len(conf.sections())):
+    for i in range(len(city)):
         file_name = '%s%s.%s%s' % ('./output/', i, city[i], '.csv')
         csv_file = open(file_name, 'w', newline='', encoding=encoding)
         csv_file_list.append(csv_file)
@@ -175,7 +176,7 @@ def main():
 
     
     #获取起始页列表
-    for i in range(len(conf.sections())):
+    for i in range(len(city)):
         get_page_list(i)
     
     #获取正文列表
