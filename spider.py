@@ -214,16 +214,19 @@ def main():
 
     #关闭全部数据csv文件
     csv_file_all.close()
-    
+    for i in csv_file_list:
+        i.close()
         
     #按关键词匹配数据单独输出
     re_filter.main()
+    #是否跳过写入数据库
+    write_data = 1
+    if check_history == 0:
+        write_data = str.lower(input('是否跳过写入数据库？（Y/n）：'))
+    if write_data == 'n':
+        for i in url_info:
+            sqlite_db.add_info(cursor, i)
 
-    #将全部数据写入数据库
-    for i in csv_file_list:
-        i.close()
-    for i in url_info:
-        sqlite_db.add_info(cursor, i)
     cursor.close()
     conn.commit()
     conn.close()
@@ -274,8 +277,8 @@ def get():
     #关闭数据文件
     csv_file.close()
     #是否跳过写入数据库
-    check_history = str.lower(input('是否跳过写入数据库？（Y/n）：'))
-    if check_history != 'n':
+    write_data = str.lower(input('是否跳过写入数据库？（Y/n）：'))
+    if write_data == 'n':
         for i in url_info:
             sqlite_db.add_info(cursor, i)
 
