@@ -24,6 +24,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 def get_info_list(driver, page, info_list, date_limit):
+    count = 0
     m = page[0]
     #读取网站配置
     data_class_name = website_data.get(city[m], 'data_class_name')
@@ -79,7 +80,7 @@ def get_info_list(driver, page, info_list, date_limit):
                 time.sleep(5)
                 driver.refresh()
             if attempts == 3:
-                print(m, city[m], page[1], '标题列表抓取失败！')
+                print(m, city[m], driver.current_url, '标题列表抓取失败！')
                 data = 0
                 break
         if data == 0:
@@ -107,12 +108,13 @@ def get_info_list(driver, page, info_list, date_limit):
             info_date = datetime.strptime(date, '%Y-%m-%d').date()
             date_diff = now - info_date
             if date_diff.days > date_limit:
-                date_status = date_status + 1
+                date_status += 1
                 if date_status > 2:
                     break
                 else:
                     continue
             #储存数据
+            count += 1
             info = []
             info.append(m) #city_num
             info.append(item.get_attribute('href')) #url
@@ -137,7 +139,7 @@ def get_info_list(driver, page, info_list, date_limit):
         except:
             print(city[m], driver.current_url, '翻页失败！')
             continue
-    print('抓取', city[m], '列表完成。')
+    print('抓取', city[m], page[1], '列表完成，抓取', count, '条。')
     return
 
 

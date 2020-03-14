@@ -112,6 +112,7 @@ def worker_info(info, writer, writer_all=None):
 
 #info_list去重
 def del_dup(info_list):
+    all_count = len(info_list)
     tmp_list = []
     for  i in info_list:
         if i not in tmp_list:
@@ -127,6 +128,8 @@ def del_dup(info_list):
         else:
             info_list.append(info)
             sqlite_db.add(cursor,info)
+    unusefull_count = all_count - len(info_list)
+    print('共抓取', all_count, '条信息，去除已抓取信息', unusefull_count, '条，剩余', len(info_list), '条。')
     return info_list
 
 def get_page_list(m):
@@ -224,6 +227,7 @@ def main():
     cursor.close()
     conn.commit()
     conn.close()
+    input('抓取完成，按回车键退出。')
     return
 
 #单独抓取配置文件中第n个网站
@@ -278,7 +282,7 @@ def get():
     cursor.close()
     conn.commit()
     conn.close()
-
+    input('抓取完成，按回车键退出。')
     return
 
 
