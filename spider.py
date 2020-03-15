@@ -36,7 +36,6 @@ encoding = conf.get('DEFAULT', 'encoding')
 chrome_location = conf.get('DEFAULT', 'chrome_location')
 firefox_location = conf.get('DEFAULT', 'firefox_location')
 thread_number = int(conf.get('DEFAULT', 'thread_number'))
-pattern = conf.get('DEFAULT', 'pattern')
 website_data = config_load.load_website_data()
 city = website_data.sections()
 

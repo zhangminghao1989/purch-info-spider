@@ -11,29 +11,32 @@ def main():
     encoding = conf.get('DEFAULT', 'encoding')
     import filter
     import csv
-    csv_read_file = open('./output/All.csv', 'r', newline='', encoding=encoding)
-    csv_write_file = open('./output/筛选结果.csv', 'w', newline='', encoding=encoding)
-    csv_junk_file = open('./output/无用信息.csv', 'w', newline='', encoding=encoding)
-    reader = csv.DictReader(csv_read_file)
-    writer = csv.writer(csv_write_file)
-    writer.writerow(['网站', '时间', '标题', '链接', '内容'])
-    junk = csv.writer(csv_junk_file)
-    junk.writerow(['网站', '时间', '标题', '链接', '内容'])
+    pattern_group = conf.sections()
+    for pattern_group_name in pattern_group:
+        csv_write_file = './output/' + pattern_group_name + '筛选结果.csv'
+        csv_junk_file = './output/' + pattern_group_name + '无用信息.csv'
+        csv_write = open(csv_write_file, 'w', newline='', encoding=encoding)
+        csv_junk = open(csv_junk_file, 'w', newline='', encoding=encoding)
+        writer = csv.writer(csv_write)
+        writer.writerow(['网站', '时间', '标题', '链接', '内容'])
+        junk = csv.writer(csv_junk)
+        junk.writerow(['网站', '时间', '标题', '链接', '内容'])
+        csv_read = open('./output/All.csv', 'r', newline='', encoding=encoding)
+        reader = csv.DictReader(csv_read)
+        list = []
+        for row in reader:
+            list.append(row)
 
-    list = []
-    for row in reader:
-        list.append(row)
-
-    for i in list:
-        city = i['网站']
-        date = i['时间']
-        title = i['标题']
-        url = i['链接']
-        info = i['内容']
-        if filter.main(info) == 1:
-            writer.writerow([city, date, title, url, info])
-        else:
-            junk.writerow([city, date, title, url, info])
+        for i in list:
+            city = i['网站']
+            date = i['时间']
+            title = i['标题']
+            url = i['链接']
+            info = i['内容']
+            if filter.main(pattern_group_name, info) == 1:
+                writer.writerow([city, date, title, url, info])
+            else:
+                junk.writerow([city, date, title, url, info])
             
 if __name__=='__main__':
     main()

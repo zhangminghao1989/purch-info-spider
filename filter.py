@@ -8,9 +8,10 @@ __author__ = 'Zhang Minghao'
 import re
 import config_load
 conf = config_load.load_conf()
-pattern = conf.get('DEFAULT', 'pattern')
 
-def main(info):
+
+def main(pattern_group_name, info):
+    pattern = conf.get(pattern_group_name, 'pattern')
     a = re.search(pattern, info)
     if a != None:
         return 1

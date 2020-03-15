@@ -10,7 +10,6 @@ __author__ = 'Zhang Minghao'
 #读取配置文件
 import config_load
 conf = config_load.load_conf()
-pattern = conf.get('DEFAULT', 'pattern')
 website_data = config_load.load_website_data()
 city = website_data.sections()
 
