@@ -29,6 +29,14 @@ if check_history == 'n':
     check_history = 0
 else:
     check_history = 1
+#是否写入数据库
+#正常情况默认写入数据库，当选择不跳过已抓取的信息或单独抓取时，可选择不写入数据库，方便调试
+write_data = 'y'
+if check_history == 0 or len(sys.argv) != 1:
+    write_data = str.lower(input('是否写入数据库？（y/N）：'))
+    if write_data != 'y':
+        write_data = 'n'
+
 
 #读取配置文件
 conf = config_load.load_conf()
@@ -36,6 +44,11 @@ encoding = conf.get('DEFAULT', 'encoding')
 chrome_location = conf.get('DEFAULT', 'chrome_location')
 firefox_location = conf.get('DEFAULT', 'firefox_location')
 thread_number = int(conf.get('DEFAULT', 'thread_number'))
+save_info_to_sql = conf.get('DEFAULT', 'save_info_to_sql')
+if save_info_to_sql == 'False':
+    save_info_to_sql = False
+else:
+    save_info_to_sql = True
 website_data = config_load.load_website_data()
 city = website_data.sections()
 
@@ -126,9 +139,13 @@ def del_dup(info_list):
         #检查数据库中不存在已抓取过的记录
         else:
             info_list.append(info)
-            sqlite_db.add(cursor,info)
+            if write_data == 'y':
+                sqlite_db.add(cursor,info)
     unusefull_count = all_count - len(info_list)
     print('共抓取', all_count, '条信息，去除已抓取信息', unusefull_count, '条，剩余', len(info_list), '条。')
+    print('抓取公告列表完成，开始抓取正文。')
+    #打乱列表顺序，避免短时间大量抓取同一网站
+    random.shuffle(info_list)
     return info_list
 
 def get_page_list(m):
@@ -151,7 +168,6 @@ def mulit_thread(page_list):
                 break
     for t in thread_list:
         t.join()
-    print('抓取公告列表完成，开始抓取正文。')
     return
 
 def main():
@@ -188,7 +204,6 @@ def main():
     #info_list去重
     info_list = del_dup(info_list)
     
-    
     #抓取正文
     info_thread_list = []
     for i in info_list:
@@ -204,6 +219,7 @@ def main():
                 break
     for t in info_thread_list:
         t.join()
+    print('正文抓取完成，开始进行收尾处理。')
     
     #关闭浏览器进程
     for i in range(thread_number):
@@ -218,11 +234,8 @@ def main():
         
     #按关键词匹配数据单独输出
     re_filter.main()
-    #是否跳过写入数据库
-    write_data = 1
-    if check_history == 0:
-        write_data = str.lower(input('是否跳过写入数据库？（Y/n）：'))
-    if write_data == 'n':
+    #是否写入数据库
+    if write_data == 'y' and save_info_to_sql:
         for i in url_info:
             sqlite_db.add_info(cursor, i)
 
@@ -267,6 +280,7 @@ def get():
                 break
     for t in info_thread_list:
         t.join()
+    print('正文抓取完成，开始进行收尾处理。')
 
     #关闭浏览器进程
     for i in range(thread_number):
@@ -275,9 +289,8 @@ def get():
         
     #关闭数据文件
     csv_file.close()
-    #是否跳过写入数据库
-    write_data = str.lower(input('是否跳过写入数据库？（Y/n）：'))
-    if write_data == 'n':
+    #是否写入数据库
+    if write_data == 'y' and save_info_to_sql:
         for i in url_info:
             sqlite_db.add_info(cursor, i)
 
