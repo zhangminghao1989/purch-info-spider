@@ -22,7 +22,9 @@ geckodriver  + firefox
 webdriver版本需与浏览器版本一致。
 
 ## 使用方法
-参考spider.conf.example模板文件建立自己的配置文件spider.conf。
-在website_data.conf文件中配置网站抓取规则后执行`python spider.py`即可
+参考spider.conf.example模板文件建立自己的配置文件spider.conf，可设置多组关键词进行结果过滤。
+在website_data.conf文件中配置网站抓取规则后执行`python spider.py`即可。
 
 可使用`python spider.py n`的方式单独抓取配置文件中的网站，n为配置文件中网站的顺序号，从0开始计算。
+
+可使用`python re_filter.py`的方式对抓取结果重新进行过滤。
