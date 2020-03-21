@@ -10,11 +10,11 @@ def load_conf(conf_name='spider.conf'):
     """
     读取配置文件
     """
-    if os.path.exists('.\spider.conf'):
+    if os.path.exists('./spider.conf'):
         pass
     else:
         from shutil import copyfile
-        copyfile('.\spider.conf.example','.\spider.conf')
+        copyfile('./spider.conf.example','./spider.conf')
     config = configparser.ConfigParser()
     config.read(conf_name, encoding='utf-8')
     return config

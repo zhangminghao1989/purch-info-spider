@@ -9,7 +9,7 @@ from html.parser import HTMLParser
 from urllib.request import urlopen, urlretrieve
 
 print('安装第三方库：')
-os.system('python -m pip install configparser selenium')
+os.system('python -m pip install configparser selenium colorlog')
 
 def versionCompare(v1, v2):
     v1_check = re.match("\d+(\.\d+){0,3}", v1)
