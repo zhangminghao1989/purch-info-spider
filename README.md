@@ -7,22 +7,24 @@ purchasing information spider
 支持设置关键词进行信息筛选并保存在`筛选结果.csv`文件中。
 
 ## 开发环境
-Python 3.7.1
+Python 3.8.2
 
 ## 使用的第三方库
 configparser
 selenium
+colorlog
 
 ## 其他需求
 chromedriver  +  chrome
 或
 geckodriver  + firefox
 
-可使用install.py脚本自动下载最新版本chromedriver。
+可使用install.py脚本自动下载最新版本webdriver和浏览器。
 webdriver版本需与浏览器版本一致。
 
 ## 使用方法
 参考spider.conf.example模板文件建立自己的配置文件spider.conf，可设置多组关键词进行结果过滤。
+第一次使用的时候执行`python install.py`可自动安装第三方库和下载webdriver、浏览器。如需更新，再次运行即可。
 在website_data.conf文件中配置网站抓取规则后执行`python spider.py`即可。
 
 可使用`python spider.py n`的方式单独抓取配置文件中的网站，n为配置文件中网站的顺序号，从0开始计算。
