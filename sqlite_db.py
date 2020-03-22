@@ -33,6 +33,8 @@ def md5(data):
 
 #初始化数据库，建立表
 def main(cursor):
+    import logger
+    logger.debug('初始化SQLite3数据库！')
     cursor.execute('''
         create table history (
             URL_Hash char(32) primary key,

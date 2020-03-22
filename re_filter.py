@@ -6,7 +6,7 @@
 __author__ = 'Zhang Minghao'
 def main():
     #读取配置文件
-    import config_load
+    import config_load, logger
     conf = config_load.load_conf()
     encoding = conf.get('DEFAULT', 'encoding')
     import filter
@@ -37,6 +37,7 @@ def main():
                 writer.writerow([city, date, title, url, info])
             else:
                 junk.writerow([city, date, title, url, info])
+        logger.debug(f'{pattern_group_name} 关键词筛选完成！')
             
 if __name__=='__main__':
     main()

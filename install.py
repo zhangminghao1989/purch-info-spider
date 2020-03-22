@@ -56,13 +56,13 @@ if os.path.exists('chromedriver.exe'):
 else:
     local_version = '0'
     print('本地缺失chromedriver，尝试自动下载。')
-#尝试获取chromedriver最新版本号，获取失败则使用75.0.3770.8
+#尝试获取chromedriver最新版本号，获取失败则使用80.0.3987.106
 print('尝试获取chromedriver最新版本号：', end='')
 try:
     version = urlopen('https://chromedriver.storage.googleapis.com/LATEST_RELEASE').read().decode('utf-8')
 except urllib.error.URLError:
     print('\n获取失败，使用', end='')
-    version = '75.0.3770.8'
+    version = '80.0.3987.106'
 print(version)
 
 check_version = versionCompare(local_version, version)

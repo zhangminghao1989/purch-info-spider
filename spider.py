@@ -16,6 +16,7 @@ import sys
 import queue
 import random
 import re_filter
+import logger
 
 #设置获取最近n天的信息
 date_limit = input('获取最近几天的信息？（默认为2天）：')
@@ -23,12 +24,16 @@ if date_limit == '':
     date_limit = 2
 else:
     date_limit = int(date_limit)
+logger.debug(f'获取最近 {date_limit} 天的信息。')
 #是否跳过已抓取过的信息
 check_history = str.lower(input('是否跳过已抓取过的信息？（Y/n）：'))
 if check_history == 'n':
     check_history = 0
+    logger.debug('不跳过已抓取过的信息。')
 else:
     check_history = 1
+    logger.debug('跳过已抓取过的信息。')
+    logger.debug('默认写入数据库。')
 #是否写入数据库
 #正常情况默认写入数据库，当选择不跳过已抓取的信息或单独抓取时，可选择不写入数据库，方便调试
 write_data = 'y'
@@ -36,6 +41,9 @@ if check_history == 0 or len(sys.argv) != 1:
     write_data = str.lower(input('是否写入数据库？（y/N）：'))
     if write_data != 'y':
         write_data = 'n'
+        logger.debug('不写入数据库。')
+    else:
+        logger.debug('写入数据库。')
 
 
 #读取配置文件
@@ -94,6 +102,7 @@ import threading
 page_list = []
 info_list = []
 url_info = []
+info_count = [0]*len(city)
 #定义Driver队列
 driver_queue = queue.Queue(thread_number)
 for i in range(thread_number):
@@ -110,7 +119,8 @@ for i in range(thread_number):
 def worker_list(page, info_list):
     #从Driver队列获取一个Driver
     driver = driver_queue.get(block=True, timeout=None)
-    get_web.get_info_list(driver, page, info_list, date_limit)
+    count = get_web.get_info_list(driver, page, info_list, date_limit)
+    info_count[count[0]] += count[1]
     #将Driver放回从Driver队列
     driver_queue.put(driver)
 
@@ -129,6 +139,7 @@ def del_dup(info_list):
     for  i in info_list:
         if i not in tmp_list:
             tmp_list.append(i)
+    duplicate_count = all_count - len(tmp_list)
     info_list = []
     for info in tmp_list:
         #检查数据库中是否存在已抓取过的记录
@@ -141,9 +152,9 @@ def del_dup(info_list):
             info_list.append(info)
             if write_data == 'y':
                 sqlite_db.add(cursor,info)
-    unusefull_count = all_count - len(info_list)
-    print('共抓取', all_count, '条信息，去除已抓取信息', unusefull_count, '条，剩余', len(info_list), '条。')
-    print('抓取公告列表完成，开始抓取正文。')
+    unusefull_count = all_count - len(info_list) - duplicate_count
+    logger.info(f'共抓取 {all_count} 条信息，去除重复信息 {duplicate_count} 条，已抓取信息 {unusefull_count} 条，剩余 {len(info_list)} 条。')
+    logger.info('抓取公告列表完成，开始抓取正文。')
     #打乱列表顺序，避免短时间大量抓取同一网站
     random.shuffle(info_list)
     return info_list
@@ -200,6 +211,8 @@ def main():
     #获取正文列表
     global info_list
     mulit_thread(page_list)
+    for m in range(len(info_count)):
+        logger.info(f'{city[m]} 列表抓取完成，{date_limit} 天内共有 {info_count[m]} 条信息。')
     
     #info_list去重
     info_list = del_dup(info_list)
@@ -219,7 +232,7 @@ def main():
                 break
     for t in info_thread_list:
         t.join()
-    print('正文抓取完成，开始进行收尾处理。')
+    logger.info('正文抓取完成，开始进行收尾处理。')
     
     #关闭浏览器进程
     for i in range(thread_number):
@@ -280,7 +293,7 @@ def get():
                 break
     for t in info_thread_list:
         t.join()
-    print('正文抓取完成，开始进行收尾处理。')
+    logger.info('正文抓取完成，开始进行收尾处理。')
 
     #关闭浏览器进程
     for i in range(thread_number):

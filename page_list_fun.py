@@ -8,7 +8,7 @@ import re
 import sys
 
 #读取配置文件
-import config_load
+import config_load, logger
 website_data = config_load.load_website_data()
 
 def get_list(m):
@@ -38,6 +38,7 @@ def get_list(m):
                 for d in url_var_3:
                     for e in url_var_4:
                         page_list.append(site.format(a, b, c, d, e))
+    logger.debug(f'{city[m]} 标题列表生成完成。')
     return page_list
 
 if __name__=='__main__':

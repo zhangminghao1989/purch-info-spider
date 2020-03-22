@@ -33,16 +33,16 @@ color_formatter = ColoredFormatter(
     datefmt=None,
     reset=True,
     log_colors={
-        'DEBUG':    'cyan',
-        'INFO':     'white',
-        'WARNING':  'green',
+        'DEBUG':    'white',
+        'INFO':     'green',
+        'WARNING':  'cyan',
         'ERROR':    'red',
-        'CRITICAL': 'red',
+        'CRITICAL': 'red,bg_white',
     }
 )
 
 # 创建一个日志器logger并设置其日志级别为DEBUG
-logger = logging.getLogger()
+logger = logging.getLogger('Spider')
 logger.setLevel(logging.DEBUG)
 
 # 创建一个流处理器，可直接输出到屏幕，设置其日志级别为LOG_LEVEL
@@ -56,6 +56,12 @@ all_handler = handlers.TimedRotatingFileHandler(filename='./log/all.log', when="
 all_handler.setLevel(logging.DEBUG)
 all_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 logger.addHandler(all_handler)
+
+# 创建一个流处理器，将WARNING级别日志输出到文件info.log
+warning_handler = handlers.TimedRotatingFileHandler(filename='./log/info.log', when="D", interval=1, backupCount=5)
+warning_handler.setLevel(logging.INFO)
+warning_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+logger.addHandler(warning_handler)
 
 # 创建一个流处理器，将WARNING级别日志输出到文件warning.log
 warning_handler = handlers.TimedRotatingFileHandler(filename='./log/warning.log', when="D", interval=1, backupCount=5)

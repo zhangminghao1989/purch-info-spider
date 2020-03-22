@@ -8,7 +8,7 @@ __author__ = 'Zhang Minghao'
 
 
 #读取配置文件
-import config_load
+import config_load, logger
 conf = config_load.load_conf()
 website_data = config_load.load_website_data()
 city = website_data.sections()
@@ -34,10 +34,10 @@ def get_info_list(driver, page, info_list, date_limit):
     next_page_xpath = website_data.get(city[m], 'next_page_xpath')
     wait_for_load = website_data.get(city[m], 'wait_for_load')
     page_query = website_data.get(city[m], 'page_query')
-
+    
     #获取标题列表网页
     wait_for_load_count = 0
-    while wait_for_load_count < 3:
+    while wait_for_load_count <= 3:
         #载入标题列表网页
         driver.get(page[1])
         time.sleep(1)
@@ -45,14 +45,16 @@ def get_info_list(driver, page, info_list, date_limit):
         if wait_for_load != '':
             try:
                 WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, wait_for_load)))
-                print('页面载入完成！')
+                logger.debug(f'{city[m]} {page[1]} 页面载入完成！')
             except:
                 wait_for_load_count += 1
-                print('页面载入失败', wait_for_load_count)
+                logger.debug(f'{city[m]} {page[1]} 页面载入失败，第 {wait_for_load_count} 次重载！')
                 continue
             break
         else:
             break
+    if wait_for_load_count > 3:
+        logger.warning(f'{city[m]} {page[1]} 页面未能完全载入，尝试抓取已载入信息！')
 
     date_status = 0
     while date_status == 0:
@@ -71,15 +73,16 @@ def get_info_list(driver, page, info_list, date_limit):
                     data = driver.find_element_by_xpath(data_xpath).find_elements_by_tag_name(list_tag_name)
                     success = True
                 else:
-                    print('错误：[', city[m], ']未设置data_class_name、data_tag_name或data_xpath参数')
+                    logger.error(f'错误：[{city[m]}]未设置data_class_name、data_tag_name或data_xpath参数!')
                     attempts = 3
                     continue
             except:
                 attempts += 1
                 time.sleep(5)
+                logger.debug(f'{m} {city[m]} {driver.current_url} 标题列表抓取失败，刷新重试！')
                 driver.refresh()
             if attempts == 3:
-                print(m, city[m], driver.current_url, '标题列表抓取失败！')
+                logger.error(f'{m} {city[m]} {driver.current_url} 标题列表抓取失败，跳过！')
                 data = 0
                 break
         if data == 0:
@@ -87,7 +90,7 @@ def get_info_list(driver, page, info_list, date_limit):
 
 
         #处理数据
-        date_status = 0
+        date_status_count = 0
         for i in range(len(data)):
             #标题选择器，默认直接读取<a>，也可使用xpath定位方式，读取失败则说明不是标题列表
             try:
@@ -107,8 +110,9 @@ def get_info_list(driver, page, info_list, date_limit):
             info_date = datetime.strptime(date, '%Y-%m-%d').date()
             date_diff = now - info_date
             if date_diff.days > date_limit:
-                date_status += 1
-                if date_status > 2:
+                date_status_count += 1
+                if date_status_count > 2:
+                    date_status = 1
                     break
                 else:
                     continue
@@ -120,7 +124,7 @@ def get_info_list(driver, page, info_list, date_limit):
             info.append(item.text) #title
             info.append(date) #date
             info_list.append(info)
-        if date_status > 2:
+        if date_status == 1:
             break
         #点击下一页
         url = driver.current_url
@@ -130,16 +134,17 @@ def get_info_list(driver, page, info_list, date_limit):
             if page_query != '':
                 url_next = page_next(url, page_query)
                 driver.get(url_next)
-                print(url, '使用备用翻页方式。')
+                logger.debug(f'{city[m]} {url} 翻页失败，使用备用翻页方式。')
             else:
+                logger.debug(f'{city[m]} {url} 翻页失败，无备用翻页方式。')
                 break
         try:
             WebDriverWait(driver, 10).until(EC.staleness_of(data[1]))
         except:
-            print(city[m], driver.current_url, '翻页失败！')
-            continue
-    print('抓取', city[m], page[1], '列表完成，抓取', count, '条。')
-    return
+            logger.warning(f'{city[m]} {driver.current_url} 使用备用翻页方式翻页失败！')
+            break
+    logger.debug(f'{city[m]} {page[1]} 列表抓取完成，{date_limit} 天内有 {count} 条信息。')
+    return [m, count]
 
 
 def get_info(driver, info_data, writer, writer_all):
@@ -156,8 +161,9 @@ def get_info(driver, info_data, writer, writer_all):
     elif info_id_name != '':
         info = get_info_fun.get_id(driver, url, info_id_name)
     else:
-        return print('错误：[', city[city_num], ']未设置info_class_name或info_id_name参数')
-
+        info = f'错误：[{city[city_num]}]未设置info_class_name或info_id_name参数'
+        logger.error(info)
+    
     #输出数据
     writer.writerow([date, title, url, info])
     try:
@@ -166,7 +172,7 @@ def get_info(driver, info_data, writer, writer_all):
         pass
     except AttributeError:
         pass
-
+    
     return [url, info]
 
 #备用翻页方式

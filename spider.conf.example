@@ -12,7 +12,7 @@ webdriver = Chrome
 #是否在数据库中保存抓取结果的正文（True/False），保存正文会占用更多磁盘空间
 save_info_to_sql = False
 #日志等级，可选DEBUG，INFO，WARNING，ERROR，CRITICAL
-log_level = WARNING
+log_level = INFO
 
 #设置关键词，允许设置多组关键词，可同时进行筛选。
 [工程施工] #这里写分组名称
