@@ -6,6 +6,7 @@ from base64 import b64decode
 from urllib import request
 import sys
 import time
+import platform
 
 info = {
     "Stable": {
@@ -51,20 +52,21 @@ def main():
         ver = 'Stable'
     print('已选择开发版本：%s' % ver)
     
-    print('Chrome编译版本：\n1：x86\n2：x64')
-    arch = input('请选择Chrome的编译版本（默认为x86）：')
-    if arch == '':
-        arch = 1
-    else:
-        arch = int(arch)
-    if arch == 1:
+    if platform.architecture()[0] == '32bit':
         arch = 'x86'
-    elif arch == 2:
+    elif platform.architecture()[0] == '64bit':
         arch = 'x64'
+    else:
+        print('Chrome编译版本：\n1：x86\n2：x64')
+        arch = input('请选择Chrome的编译版本（默认为x86）：')
+        if arch == '2' or arch == 'x64' or arch == '64':
+            arch = 'x64'
+        else:
+            arch = 'x86'
     print('已选择编译版本：%s' % arch)
+    
     time.sleep(2)
 
-    #for arch in ['x64','x86']:
     print('='*20)
     print(ver, arch)
     payload = """<?xml version='1.0' encoding='UTF-8'?>

@@ -1,14 +1,14 @@
 [DEFAULT]
 #保存的csv文件编码格式，windwos系统建议使用utf-8-sig
 encoding = utf-8-sig
-#chrome浏览器路径，留空则自动调用已安装的Chrome浏览器，绿色版请输入绝对路径
+#配置使用的Webdriver，支持Chrome和Firefox两种浏览器
+webdriver = Chrome
+#webdriver = Firefox
+#浏览器路径，留空则自动调用已安装的浏览器，绿色版请输入绝对路径，不带引号
 chrome_location = 
 firefox_location = 
 #多线程数量
 thread_number = 5
-#配置使用的Webdriver
-webdriver = Chrome
-#webdriver = Firefox
 #是否在数据库中保存抓取结果的正文（True/False），保存正文会占用更多磁盘空间
 save_info_to_sql = False
 #日志等级，可选DEBUG，INFO，WARNING，ERROR，CRITICAL

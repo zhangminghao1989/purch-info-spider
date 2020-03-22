@@ -49,8 +49,6 @@ if check_history == 0 or len(sys.argv) != 1:
 #读取配置文件
 conf = config_load.load_conf()
 encoding = conf.get('DEFAULT', 'encoding')
-chrome_location = conf.get('DEFAULT', 'chrome_location')
-firefox_location = conf.get('DEFAULT', 'firefox_location')
 thread_number = int(conf.get('DEFAULT', 'thread_number'))
 save_info_to_sql = conf.get('DEFAULT', 'save_info_to_sql')
 if save_info_to_sql == 'False':
@@ -64,24 +62,30 @@ city = website_data.sections()
 chosen_webdriver = conf.get('DEFAULT', 'webdriver')
 from selenium import webdriver
 if chosen_webdriver == 'Chrome':
+    chrome_location = conf.get('DEFAULT', 'chrome_location')
     from selenium.webdriver.chrome.options import Options
     chrome_options = Options()
     #chrome_options.add_argument('--headless')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--log-level=3')
-    chrome_options.binary_location = chrome_location
+    if chrome_location != '':
+        chrome_options.binary_location = chrome_location
+    #禁止载入图片
     chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-
-if chosen_webdriver == 'Firefox':
+elif chosen_webdriver == 'Firefox':
+    firefox_location = conf.get('DEFAULT', 'firefox_location')
     firefox_options = webdriver.FirefoxOptions()
     firefox_options.add_argument('-headless')
     firefox_profile = webdriver.FirefoxProfile()
+    #禁止载入图片
     firefox_profile.set_preference('permissions.default.image', 2)
     #禁用Flash
     firefox_profile.set_preference('dom.ipc.plugins.enabled.npswf32.dll', 'false')
     #禁用javascript，部分网站可能会不能正常使用
     #firefox_profile.set_preference('javascript.enabled', 'false')
-
+else:
+    logger.critical('webdriver配置错误，请在spider.conf配置文件中配置webdriver参数，可选参数为Chrome和Firefox，注意大小写！')
+    
 #建立数据存储目录
 try:
     os.mkdir('output')
@@ -106,14 +110,19 @@ info_count = [0]*len(city)
 #定义Driver队列
 driver_queue = queue.Queue(thread_number)
 for i in range(thread_number):
+    logger.info(f'打开第 {i+1} 个浏览器进程。')
     if chosen_webdriver == 'Chrome':
         driver_init = webdriver.Chrome(options=chrome_options)
     if chosen_webdriver == 'Firefox':
-        driver_init = webdriver.Firefox(firefox_binary=firefox_location, options=firefox_options, firefox_profile = firefox_profile)
+        if firefox_location != '':
+            driver_init = webdriver.Firefox(firefox_binary=firefox_location, options=firefox_options, firefox_profile = firefox_profile)
+        else:
+            driver_init = webdriver.Firefox(options=firefox_options, firefox_profile = firefox_profile)
     #设置浏览器分辨率
     size = driver_init.get_window_size()
     driver_init.set_window_size(1280, size['height'])
     driver_queue.put(driver_init)
+
 
 
 def worker_list(page, info_list):
